@@ -1,0 +1,39 @@
+#pragma once
+
+#include <string.h>
+#include "driver/i2c_master.h"
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
+
+#define I2C_MASTER_TIMEOUT_MS       1000
+
+#define LCD_I2C_ADDR                0x27
+#define LCD_EN_FLAG                 0x04  // Enable bit
+#define LCD_RW_FLAG                 0x02  // Read/Write bit (0 = write)
+#define LCD_RS_FLAG                 0x01  // Register Select bit
+#define LCD_BL_FLAG                 0x08  // Backlight bit
+
+typedef enum{
+    sendAsCommand = 0,
+    sendAsData
+} LCDsendMode;
+
+typedef enum{
+    BackgroundLightOFF = 0,
+    BackgroundLightON
+} BackgroundLightState;
+
+typedef struct{
+    i2c_device_config_t i2c_config;
+    i2c_master_dev_handle_t i2c_handler;
+    BackgroundLightState BackgroundLight;
+    bool isConnected;
+} LCD1602;
+
+void LCDinit(LCD1602 *lcd, uint8_t i2c_addr,int i2c_speed, i2c_master_bus_handle_t *bus_handle);
+void LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode);
+void LCDclear(LCD1602 *lcd);
+void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y);
+void LCDprint(LCD1602 *lcd, const char *str);
+void LCDsetBackgroundLight(LCD1602 *lcd, BackgroundLightState state);
+void LCDpulseEnable(LCD1602 *lcd, uint8_t data);
