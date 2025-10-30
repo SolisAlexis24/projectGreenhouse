@@ -8,10 +8,16 @@
 #define I2C_MASTER_TIMEOUT_MS       1000
 
 #define LCD_I2C_ADDR                0x27
-#define LCD_EN_FLAG                 0x04  // Enable bit
-#define LCD_RW_FLAG                 0x02  // Read/Write bit (0 = write)
-#define LCD_RS_FLAG                 0x01  // Register Select bit
-#define LCD_BL_FLAG                 0x08  // Backlight bit
+#define LCD_EN_BIT                  0x04  // Enable bit
+#define LCD_RW_BIT                  0x02  // Read/Write bit (0 = write)
+#define LCD_RS_BIT                  0x01  // Register Select bit
+#define LCD_BL_BIT                  0x08  // Backlight bit
+#define LCD_INIT                    0x33
+#define LCD_4BITS_MODE              0x32
+#define LCD_2LINES_35P              0x28
+#define LCD_EN_DIS_HID_CUR          0x0C
+#define LCD_CLEAR                   0x01
+
 
 typedef enum{
     sendAsCommand = 0,

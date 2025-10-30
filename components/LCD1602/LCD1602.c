@@ -1,24 +1,21 @@
 #include "LCD1602.h"
+#include "freertos/idf_additions.h"
+#include "freertos/projdefs.h"
+#include <stdint.h>
 
 void LCDpulseEnable(LCD1602 *lcd, uint8_t data)
 {
     uint8_t buffer;
     
     // Set enable bit high
-    buffer = data | LCD_EN_FLAG;
-    if (lcd->BackgroundLight == BackgroundLightON) {
-        buffer |= LCD_BL_FLAG;
-    }
+    buffer = data | LCD_EN_BIT;
     ESP_ERROR_CHECK(i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS));
-    vTaskDelay(1 / portTICK_PERIOD_MS);
+    vTaskDelay(pdMS_TO_TICKS(1));
     
     // Set enable bit low
-    buffer = data & ~LCD_EN_FLAG;
-    if (lcd->BackgroundLight == BackgroundLightON) {
-        buffer |= LCD_BL_FLAG;
-    }
+    buffer = data & ~LCD_EN_BIT;
     ESP_ERROR_CHECK(i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS));
-    vTaskDelay(1 / portTICK_PERIOD_MS);
+    vTaskDelay(pdMS_TO_TICKS(1));
 }
 
 void LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode)
@@ -30,12 +27,12 @@ void LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode)
     uint8_t flags = 0x00; // RW = 0 (write)
     
     if (mode == sendAsData) {
-        flags |= LCD_RS_FLAG; // RS = 1 para datos
+        flags |= LCD_RS_BIT; // RS = 1 para datos
     }
     // RS = 0 para comandos
     
     if (lcd->BackgroundLight == BackgroundLightON) {
-        flags |= LCD_BL_FLAG;
+        flags |= LCD_BL_BIT;
     }
     
     high_nibble = (Byte & 0xF0) | flags;
@@ -54,47 +51,22 @@ void LCDinit(LCD1602 *lcd, uint8_t i2c_addr, int i2c_speed,i2c_master_bus_handle
     lcd->isConnected = true;
     lcd->BackgroundLight = BackgroundLightON;
     
-    // ESPERAR MÁS TIEMPO PARA ESTABILIZACIÓN DE VOLTAJE
-    vTaskDelay(100 / portTICK_PERIOD_MS);  // Aumentado de 50ms a 100ms
+    vTaskDelay(pdMS_TO_TICKS(100));
     
-    
-    // SECUENCIA DE INICIALIZACIÓN MÁS ROBUSTA
-    // Intentar forzar el modo 8-bit tres veces
-    for(int i = 0; i < 3; i++) {
-        LCDsendByte(lcd, 0x30, sendAsCommand);
-        vTaskDelay(10 / portTICK_PERIOD_MS);
-    }
-    
-    // Cambiar a modo 4-bit
-     LCDsendByte(lcd, 0x20, sendAsCommand);
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-    
-    // Configurar función: 2 líneas, fuente 5x8
-    LCDsendByte(lcd, 0x28, sendAsCommand);
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-    
-    // Apagar display
-    LCDsendByte(lcd, 0x08, sendAsCommand);
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-    
-    // Limpiar display
-    LCDsendByte(lcd, 0x01, sendAsCommand);
-    vTaskDelay(20 / portTICK_PERIOD_MS);
-    
-    // Modo de entrada: incrementar cursor, no shift
-    LCDsendByte(lcd, 0x06, sendAsCommand);
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-    
-    // Encender display, cursor off, blink off
-    LCDsendByte(lcd, 0x0C, sendAsCommand);
-    vTaskDelay(1 / portTICK_PERIOD_MS);
-    
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    LCDsendByte(lcd, LCD_INIT, sendAsCommand);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    LCDsendByte(lcd, LCD_4BITS_MODE, sendAsCommand);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    LCDsendByte(lcd, LCD_2LINES_35P, sendAsCommand);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    LCDsendByte(lcd, LCD_EN_DIS_HID_CUR, sendAsCommand);
+    vTaskDelay(pdMS_TO_TICKS(5));
+    LCDsendByte(lcd, LCD_CLEAR, sendAsCommand);
+    vTaskDelay(pdMS_TO_TICKS(5));
 }
 
 void LCDclear(LCD1602 *lcd){
-    LCDsendByte(lcd, 0x01, sendAsCommand);
-    vTaskDelay(2 / portTICK_PERIOD_MS);
+    LCDsendByte(lcd, LCD_CLEAR, sendAsCommand);
 }
 
 void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y){
@@ -108,7 +80,6 @@ void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y){
 void LCDprint(LCD1602 *lcd, const char *str){
     for(uint8_t i = 0; i < strlen(str); ++i){
         LCDsendByte(lcd, str[i], sendAsData);
-        vTaskDelay(1 / portTICK_PERIOD_MS);
     }
 }
 
