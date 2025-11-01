@@ -32,15 +32,15 @@ esp_err_t AM2302read(AM2302Handler* sh){
 	_AM2302sendStartSignal(sh);
 	_AM2302relaseBus(sh);
 
-	error_state = _AM2302AwaitPinLevel_us(sh, NULL, 0, 40);
+	error_state = _AM2302AwaitPinLevel_us(sh, NO_DURATION_RECORD, LOW_LEVEL, 40);
 	if(error_state)
 		return error_state;
 	
-	error_state = _AM2302AwaitPinLevel_us(sh, NULL, 1, 80);
+	error_state = _AM2302AwaitPinLevel_us(sh, NO_DURATION_RECORD, HIGH_LEVEL, 80);
 	if(error_state)
 		return error_state;
 	
-	error_state = _AM2302AwaitPinLevel_us(sh, NULL, 0, 80);
+	error_state = _AM2302AwaitPinLevel_us(sh, NO_DURATION_RECORD, LOW_LEVEL, 80);
 	if(error_state)
 		return error_state;
 	
@@ -57,13 +57,13 @@ esp_err_t _AM2302fetchData(AM2302Handler* sh){
 	uint8_t rawData[5] = {0};
 	esp_err_t error_state;
 
-	for(uint8_t i = 0; i < 40; ++i){		
-		error_state = _AM2302AwaitPinLevel_us(sh, &lowLevelDuration, 1, 65);
+	for(uint8_t i = 0; i < AM2302_DATA_BITS; ++i){		
+		error_state = _AM2302AwaitPinLevel_us(sh, &lowLevelDuration, HIGH_LEVEL, TIMEOUT_LOW_LEVEL);
 		if(error_state)
 			return error_state;
 		
 
-		error_state = _AM2302AwaitPinLevel_us(sh, &highLevelDuration, 0, 75);
+		error_state = _AM2302AwaitPinLevel_us(sh, &highLevelDuration, LOW_LEVEL, TIMEOUT_HIGH_LEVEL);
 		if(error_state)
 			return error_state;
 
@@ -74,6 +74,7 @@ esp_err_t _AM2302fetchData(AM2302Handler* sh){
 
 	uint8_t expectedChecksum = (rawData[0] + rawData[1] + rawData[2] + rawData[3]) & 0xFF;
 	if(rawData[4] != expectedChecksum){
+		vPortExitCritical(&sh->Spinlock);
 		ESP_LOGE(AM2302_TAG, "Expected checksum: %02X", expectedChecksum);
 		ESP_LOGE(AM2302_TAG, "Received checksum: %02X", rawData[4]);
 		ESP_LOGE(AM2302_TAG, "Humifity high: %02X", rawData[0]);
@@ -89,18 +90,18 @@ esp_err_t _AM2302fetchData(AM2302Handler* sh){
 }
 
 void _AM2302sendStartSignal(AM2302Handler* sh){
-	gpio_set_level(sh->pin, 0);
+	gpio_set_level(sh->pin, LOW_LEVEL);
 	esp_rom_delay_us(1000);
 }
 
 void _AM2302relaseBus(AM2302Handler* sh){
-	gpio_set_level(sh->pin, 1);
+	gpio_set_level(sh->pin, HIGH_LEVEL);
 }
 
 
 esp_err_t _AM2302AwaitPinLevel_us(AM2302Handler* sh, uint8_t *duration, int expected_level, uint8_t timeout){
-	for(uint8_t i = 0; i < timeout; i += 2){
-		esp_rom_delay_us(2);
+	for(uint8_t i = 0; i < timeout; i += MINIMUM_RESOLUTION_DELAY){
+		esp_rom_delay_us(MINIMUM_RESOLUTION_DELAY);
 		if(expected_level == gpio_get_level(sh->pin)){
 			if(duration)
 				*duration = i;

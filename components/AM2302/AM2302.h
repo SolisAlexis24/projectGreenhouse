@@ -12,6 +12,15 @@
 #include "esp_rom_sys.h"
 
 
+#define NO_DURATION_RECORD NULL
+#define LOW_LEVEL 0
+#define HIGH_LEVEL 1
+#define TIMEOUT_LOW_LEVEL 65
+#define TIMEOUT_HIGH_LEVEL 75
+#define AM2302_DATA_BITS 40
+#define MINIMUM_RESOLUTION_DELAY 2
+
+
 static const char *AM2302_TAG = "AM2302";
 typedef struct{
 	gpio_num_t pin;
