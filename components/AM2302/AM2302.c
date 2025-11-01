@@ -1,0 +1,113 @@
+#include "AM2302.h"
+#include "portmacro.h"
+#include <time.h>
+
+esp_err_t AM2302init(AM2302Handler *sh, gpio_num_t pin){
+	if(!sh)
+		return ESP_ERR_INVALID_ARG;
+
+	sh->pin = pin;
+	esp_err_t statusR = gpio_reset_pin(pin);
+	esp_err_t statusS = gpio_set_direction(pin, GPIO_MODE_INPUT_OUTPUT_OD);
+	esp_err_t statusL = gpio_set_level(pin, 1);
+	if (ESP_ERR_INVALID_ARG == statusR || ESP_ERR_INVALID_ARG == statusS || ESP_ERR_INVALID_ARG == statusL){
+		ESP_LOGI(AM2302_TAG, "Pin not valid");
+		return ESP_ERR_INVALID_ARG;
+	}
+	sh->readyToUse = true;
+	spinlock_initialize(&sh->Spinlock);
+	return ESP_OK;
+}
+
+
+esp_err_t AM2302read(AM2302Handler* sh){
+	if(!sh)
+		return ESP_ERR_INVALID_ARG;
+	if(!sh->readyToUse)
+		return ESP_ERR_INVALID_ARG;
+	
+	esp_err_t error_state;
+
+	vPortEnterCritical(&sh->Spinlock);
+	_AM2302sendStartSignal(sh);
+	_AM2302relaseBus(sh);
+
+	error_state = _AM2302AwaitPinLevel_us(sh, NULL, 0, 40);
+	if(error_state)
+		return error_state;
+	
+	error_state = _AM2302AwaitPinLevel_us(sh, NULL, 1, 80);
+	if(error_state)
+		return error_state;
+	
+	error_state = _AM2302AwaitPinLevel_us(sh, NULL, 0, 80);
+	if(error_state)
+		return error_state;
+	
+	error_state = _AM2302fetchData(sh);
+	vPortExitCritical(&sh->Spinlock);
+
+	return error_state;
+}
+
+
+esp_err_t _AM2302fetchData(AM2302Handler* sh){
+	uint8_t highLevelDuration;
+	uint8_t lowLevelDuration;
+	uint8_t rawData[5] = {0};
+	esp_err_t error_state;
+
+	for(uint8_t i = 0; i < 40; ++i){		
+		error_state = _AM2302AwaitPinLevel_us(sh, &lowLevelDuration, 1, 65);
+		if(error_state)
+			return error_state;
+		
+
+		error_state = _AM2302AwaitPinLevel_us(sh, &highLevelDuration, 0, 75);
+		if(error_state)
+			return error_state;
+
+	    rawData[i / 8] <<= 1;
+	    if (highLevelDuration > lowLevelDuration)
+	        rawData[i / 8] |= 1;
+	}
+
+	uint8_t expectedChecksum = (rawData[0] + rawData[1] + rawData[2] + rawData[3]) & 0xFF;
+	if(rawData[4] != expectedChecksum){
+		ESP_LOGE(AM2302_TAG, "Expected checksum: %02X", expectedChecksum);
+		ESP_LOGE(AM2302_TAG, "Received checksum: %02X", rawData[4]);
+		ESP_LOGE(AM2302_TAG, "Humifity high: %02X", rawData[0]);
+		ESP_LOGE(AM2302_TAG, "Humidity low: %02X", rawData[1]);
+		ESP_LOGE(AM2302_TAG, "Temperature high: %02X", rawData[2]);
+		ESP_LOGE(AM2302_TAG, "Temperature low: %02X", rawData[3]);
+		return ESP_ERR_INVALID_RESPONSE;
+	}
+
+	sh->humidity = ((rawData[0] << 8) | rawData[1])/10.f;
+    sh->temperature = ((rawData[2] << 8) | rawData[3])/10.f;
+    return ESP_OK;
+}
+
+void _AM2302sendStartSignal(AM2302Handler* sh){
+	gpio_set_level(sh->pin, 0);
+	esp_rom_delay_us(1000);
+}
+
+void _AM2302relaseBus(AM2302Handler* sh){
+	gpio_set_level(sh->pin, 1);
+}
+
+
+esp_err_t _AM2302AwaitPinLevel_us(AM2302Handler* sh, uint8_t *duration, int expected_level, uint8_t timeout){
+	for(uint8_t i = 0; i < timeout; i += 2){
+		esp_rom_delay_us(2);
+		if(expected_level == gpio_get_level(sh->pin)){
+			if(duration)
+				*duration = i;
+			return ESP_OK;
+		}
+	}
+	vPortExitCritical(&sh->Spinlock);
+	ESP_LOGE(AM2302_TAG, "Timeout has expired after %u [us] awaiting for the bus to be set to %d", timeout, expected_level);
+	return ESP_ERR_TIMEOUT;
+}
