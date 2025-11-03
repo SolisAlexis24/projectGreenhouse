@@ -1,68 +1,88 @@
 #include "LCD1602.h"
-#include "freertos/idf_additions.h"
-#include "freertos/projdefs.h"
-#include <stdint.h>
+#include "esp_err.h"
 
-void LCDpulseEnable(LCD1602 *lcd, uint8_t data)
+esp_err_t LCDpulseEnable(LCD1602 *lcd, uint8_t data)
 {
     uint8_t buffer;
+    esp_err_t errorStatus = ESP_OK;
     
     // Set enable bit high
     buffer = data | LCD_EN_BIT;
-    ESP_ERROR_CHECK(i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS));
+    errorStatus += i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
     vTaskDelay(pdMS_TO_TICKS(1));
     
     // Set enable bit low
     buffer = data & ~LCD_EN_BIT;
-    ESP_ERROR_CHECK(i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS));
+    errorStatus += i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
     vTaskDelay(pdMS_TO_TICKS(1));
+
+    if(errorStatus)
+        return ESP_ERR_TIMEOUT;
+
+    return ESP_OK;
 }
 
-void LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode)
+esp_err_t LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode)
 {
     if (!lcd->isConnected) 
-        return;
+        return ESP_ERR_INVALID_ARG;
 
     uint8_t high_nibble, low_nibble;
     uint8_t flags = 0x00; // RW = 0 (write)
+    esp_err_t errorStatus = ESP_OK;
     
     if (mode == sendAsData) {
-        flags |= LCD_RS_BIT; // RS = 1 para datos
+        flags |= LCD_RS_BIT; // RS = 1 for data
     }
-    // RS = 0 para comandos
+    // RS = 0 for commands
     
-    if (lcd->BackgroundLight == BackgroundLightON) {
+    if (lcd->BackgroundLight == BackgroundLightON)
         flags |= LCD_BL_BIT;
-    }
+    
     
     high_nibble = (Byte & 0xF0) | flags;
-    LCDpulseEnable(lcd, high_nibble);
+    errorStatus += LCDpulseEnable(lcd, high_nibble);
     
     low_nibble = ((Byte & 0x0F) << 4) | flags;
-    LCDpulseEnable(lcd, low_nibble);
+    errorStatus += LCDpulseEnable(lcd, low_nibble);
+
+    if(errorStatus)
+        return ESP_ERR_TIMEOUT;
+
+    return ESP_OK;
 }
 
-void LCDinit(LCD1602 *lcd, uint8_t i2c_addr, int i2c_speed,i2c_master_bus_handle_t *bus_handle)
-{
+esp_err_t LCDinit(LCD1602 *lcd, uint8_t i2c_addr, int i2c_speed,i2c_master_bus_handle_t *bus_handle){
+
+    esp_err_t errorStatus;
+
     lcd->i2c_config.dev_addr_length = I2C_ADDR_BIT_LEN_7;
     lcd->i2c_config.device_address = i2c_addr;
     lcd->i2c_config.scl_speed_hz = i2c_speed;
-    ESP_ERROR_CHECK(i2c_master_bus_add_device(*bus_handle, &lcd->i2c_config, &lcd->i2c_handler));
+    errorStatus = i2c_master_bus_add_device(*bus_handle, &lcd->i2c_config, &lcd->i2c_handler);
+    if(errorStatus)
+        return errorStatus;
+
     lcd->isConnected = true;
     lcd->BackgroundLight = BackgroundLightON;
     
     vTaskDelay(pdMS_TO_TICKS(100));
     
-    LCDsendByte(lcd, LCD_INIT, sendAsCommand);
+    errorStatus += LCDsendByte(lcd, LCD_INIT, sendAsCommand);
     vTaskDelay(pdMS_TO_TICKS(5));
-    LCDsendByte(lcd, LCD_4BITS_MODE, sendAsCommand);
+    errorStatus += LCDsendByte(lcd, LCD_4BITS_MODE, sendAsCommand);
     vTaskDelay(pdMS_TO_TICKS(5));
-    LCDsendByte(lcd, LCD_2LINES_35P, sendAsCommand);
+    errorStatus += LCDsendByte(lcd, LCD_2LINES_35P, sendAsCommand);
     vTaskDelay(pdMS_TO_TICKS(5));
-    LCDsendByte(lcd, LCD_EN_DIS_HID_CUR, sendAsCommand);
+    errorStatus += LCDsendByte(lcd, LCD_EN_DIS_HID_CUR, sendAsCommand);
     vTaskDelay(pdMS_TO_TICKS(5));
-    LCDsendByte(lcd, LCD_CLEAR, sendAsCommand);
+    errorStatus += LCDsendByte(lcd, LCD_CLEAR, sendAsCommand);
     vTaskDelay(pdMS_TO_TICKS(5));
+
+    if(errorStatus)
+        return ESP_ERR_TIMEOUT;
+
+    return ESP_OK;
 }
 
 void LCDclear(LCD1602 *lcd){

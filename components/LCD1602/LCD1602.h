@@ -4,6 +4,8 @@
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_err.h"
+#include <stdint.h>
 
 #define I2C_MASTER_TIMEOUT_MS       1000
 
@@ -39,12 +41,12 @@ typedef struct{
     bool isConnected;
 } LCD1602;
 
-void LCDinit(LCD1602 *lcd, uint8_t i2c_addr,int i2c_speed, i2c_master_bus_handle_t *bus_handle);
-void LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode);
+esp_err_t LCDinit(LCD1602 *lcd, uint8_t i2c_addr,int i2c_speed, i2c_master_bus_handle_t *bus_handle);
+esp_err_t LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode);
 void LCDclear(LCD1602 *lcd);
 void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y);
 void LCDprint(LCD1602 *lcd, const char *str, ...);
 void LCDprintCelsiusSymbol(LCD1602 *lcd);
 void LCDprintPercentageSymbol(LCD1602 *lcd);
 void LCDsetBackgroundLight(LCD1602 *lcd, BackgroundLightState state);
-void LCDpulseEnable(LCD1602 *lcd, uint8_t data);
+esp_err_t LCDpulseEnable(LCD1602 *lcd, uint8_t data);
