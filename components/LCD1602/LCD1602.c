@@ -77,11 +77,28 @@ void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y){
     LCDsendByte(lcd, position, sendAsCommand);
 }
 
-void LCDprint(LCD1602 *lcd, const char *str){
-    for(uint8_t i = 0; i < strlen(str); ++i){
-        LCDsendByte(lcd, str[i], sendAsData);
+void LCDprint(LCD1602 *lcd, const char *str, ...){
+    char buffer[32];
+
+    va_list args;
+    va_start(args, str);
+    vsnprintf(buffer, sizeof(buffer), str, args);
+    va_end(args);
+
+    for (uint8_t i = 0; i < strlen(buffer); ++i) {
+        LCDsendByte(lcd, buffer[i], sendAsData);
     }
 }
+
+void LCDprintCelsiusSymbol(LCD1602 *lcd){
+    LCDsendByte(lcd, DEGREE_SYMBOL, sendAsData);
+    LCDprint(lcd, "C");
+}
+
+void LCDprintPercentageSymbol(LCD1602 *lcd){
+    LCDsendByte(lcd, PERCENTAGE_SYMBOL, sendAsData);
+}
+
 
 void LCDsetBackgroundLight(LCD1602 *lcd, BackgroundLightState state){
     lcd->BackgroundLight = state;

@@ -18,6 +18,9 @@
 #define LCD_EN_DIS_HID_CUR          0x0C
 #define LCD_CLEAR                   0x01
 
+#define DEGREE_SYMBOL   0xDF
+#define PERCENTAGE_SYMBOL 0x25
+
 
 typedef enum{
     sendAsCommand = 0,
@@ -40,6 +43,8 @@ void LCDinit(LCD1602 *lcd, uint8_t i2c_addr,int i2c_speed, i2c_master_bus_handle
 void LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode);
 void LCDclear(LCD1602 *lcd);
 void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y);
-void LCDprint(LCD1602 *lcd, const char *str);
+void LCDprint(LCD1602 *lcd, const char *str, ...);
+void LCDprintCelsiusSymbol(LCD1602 *lcd);
+void LCDprintPercentageSymbol(LCD1602 *lcd);
 void LCDsetBackgroundLight(LCD1602 *lcd, BackgroundLightState state);
 void LCDpulseEnable(LCD1602 *lcd, uint8_t data);
