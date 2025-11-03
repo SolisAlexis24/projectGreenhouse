@@ -41,12 +41,71 @@ typedef struct{
     bool isConnected;
 } LCD1602;
 
+/**
+ * @brief      Initialize the LCD at the given I2C address
+ *
+ * @param      lcd         LCD handler (To set configuration and bus master)
+ * @param[in]  i2c_addr    I2C address of LCD
+ * @param[in]  i2c_speed   I2C communication speed
+ * @param      bus_handle  Master handler
+ *
+ * @return     
+ * - ESP_ERR_INVALID_ARG If the master handler was not valid
+ * - ESP_ERR_NO_MEM If there is not any memory
+ * - ESP_ERR_TIMEOUT If communication could not be stablished
+ * - ESP_OK If LCD configuration was successfull
+ */
 esp_err_t LCDinit(LCD1602 *lcd, uint8_t i2c_addr,int i2c_speed, i2c_master_bus_handle_t *bus_handle);
-esp_err_t LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode);
-void LCDclear(LCD1602 *lcd);
-void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y);
+/**
+ * @brief      Prints given test into LCD
+ *
+ * @param      lcd        LCD handler
+ * @param[in]  str        String to be printed
+ */
 void LCDprint(LCD1602 *lcd, const char *str, ...);
+/**
+ * @brief      Clear the LCD content
+ *
+ * @param      LCD handler
+ */
+void LCDclear(LCD1602 *lcd);
+/**
+ * @brief      Set cursor into given position
+ *
+ * @param      LCD handler
+ * @param[in]  pos_x  X position (0-15)
+ * @param[in]  pos_y  Y position (0-1)
+ */
+void LCDsetCursor(LCD1602 *lcd, uint8_t pos_x, uint8_t pos_y);
+/**
+ * @brief      Prints *C into LCD
+ *
+ * @param      LCD handler
+ */
 void LCDprintCelsiusSymbol(LCD1602 *lcd);
+/**
+ * @brief      Prints % into LCD
+ *
+ * @param      LCD handler
+ */
 void LCDprintPercentageSymbol(LCD1602 *lcd);
+/**
+ * @brief      Sets intern variable that handles background light of LCD to given state
+ *
+ * @param      LCD handler
+ * @param[in]  Background Light State (ON or OFF)
+ */
 void LCDsetBackgroundLight(LCD1602 *lcd, BackgroundLightState state);
-esp_err_t LCDpulseEnable(LCD1602 *lcd, uint8_t data);
+
+/**
+ * @brief      Send a byte to LCD thorug I2C
+ *
+ * @param      LCD handler
+ * @param[in]  Byte to send
+ * @param[in]  Send mode (command or data)
+ *
+ * @return     
+ * - ESP_ERR_TIMEOUT If communication with LCD was not successfull
+ * - ESP_OK If communication was successfull
+ */
+esp_err_t LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode);

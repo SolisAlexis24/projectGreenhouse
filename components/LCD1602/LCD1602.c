@@ -1,8 +1,16 @@
 #include "LCD1602.h"
-#include "esp_err.h"
 
-esp_err_t LCDpulseEnable(LCD1602 *lcd, uint8_t data)
-{
+/**
+ * @brief      Send given byte enabling and disabling LCD "E" bit
+ *
+ * @param      LCD handler
+ * @param[in]  Data to send
+ *
+ * @return
+ * - ESP_ERR_TIMEOUT If communication with LCD was not successfull
+ * - ESP_OK If communication was successfull
+ */
+static esp_err_t _LCDpulseEnable(LCD1602 *lcd, uint8_t data){
     uint8_t buffer;
     esp_err_t errorStatus = ESP_OK;
     
@@ -41,10 +49,10 @@ esp_err_t LCDsendByte(LCD1602 *lcd, uint8_t Byte, LCDsendMode mode)
     
     
     high_nibble = (Byte & 0xF0) | flags;
-    errorStatus += LCDpulseEnable(lcd, high_nibble);
+    errorStatus += _LCDpulseEnable(lcd, high_nibble);
     
     low_nibble = ((Byte & 0x0F) << 4) | flags;
-    errorStatus += LCDpulseEnable(lcd, low_nibble);
+    errorStatus += _LCDpulseEnable(lcd, low_nibble);
 
     if(errorStatus)
         return ESP_ERR_TIMEOUT;
