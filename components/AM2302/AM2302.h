@@ -1,3 +1,12 @@
+/**
+ *************************************
+ * @file: AM2302.h
+ * @author: Solis Hernandez Ian Alexis
+ * @year: 2025
+ * @licence: MIT
+ * ***********************************
+ */
+
 #pragma once
 
 #include <stdint.h>

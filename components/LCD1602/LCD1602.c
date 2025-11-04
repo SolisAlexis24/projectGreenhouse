@@ -1,3 +1,12 @@
+/**
+ *************************************
+ * @file: LCD2602.c
+ * @author: Solis Hernandez Ian Alexis
+ * @year: 2025
+ * @licence: MIT
+ * ***********************************
+ */
+
 #include "LCD1602.h"
 
 /**

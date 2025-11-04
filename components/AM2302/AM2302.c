@@ -1,3 +1,12 @@
+/**
+ *************************************
+ * @file: AM2302,c
+ * @author: Solis Hernandez Ian Alexis
+ * @year: 2025
+ * @licence: MIT
+ * ***********************************
+ */
+
 #include "AM2302.h"
 
 esp_err_t AM2302init(AM2302Handler *sh, gpio_num_t pin){
