@@ -29,7 +29,7 @@ esp_err_t ADCconfigUnitBasic(ADCHandler *adcHan, adc_unit_t unit){
 	return errorStatus;
 }
 
-esp_err_t ADCConfigChannel(ADCHandler *adcHan, adc_atten_t attenuation, adc_bitwidth_t outputResolution, adc_channel_t channel){
+esp_err_t ADCconfigChannel(ADCHandler *adcHan, adc_atten_t attenuation, adc_bitwidth_t outputResolution, adc_channel_t channel){
 	if(!adcHan || !adcHan->unitHandler)
 		return ESP_ERR_INVALID_ARG;
 

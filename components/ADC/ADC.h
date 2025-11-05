@@ -71,7 +71,7 @@ esp_err_t ADCconfigUnitBasic(ADCHandler *adcHan, adc_unit_t unit);
  * 
  * @note If channel configuration fails, ADCchannel will not be initialized
  */
-esp_err_t ADCConfigChannel(ADCHandler *adcHan, adc_atten_t attenuation, adc_bitwidth_t outputResolution, adc_channel_t channel);
+esp_err_t ADCconfigChannel(ADCHandler *adcHan, adc_atten_t attenuation, adc_bitwidth_t outputResolution, adc_channel_t channel);
 
 /**
  * @brief      Read and store ADC measurement
