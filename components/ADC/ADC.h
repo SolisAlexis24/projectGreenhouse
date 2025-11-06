@@ -58,7 +58,7 @@ static const char *TAG_ADC = "ADC";
 esp_err_t ADCconfigUnitBasic(ADCHandler *adcHan, adc_unit_t unit);
 
 /**
- * @brief      Configure a channel from the unit handler contained in ADCHandler
+ * @brief      Configure a channel from the unit handler contained in ADCHandler and create a profile for linnear calibration
  *
  * @param      adcHan            ADC handler that will contain specified channel
  * @param[in]  attenuation       The attenuation for the channel
