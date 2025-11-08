@@ -80,7 +80,6 @@ static esp_err_t _AM2302AwaitPinLevel_us(AM2302Handler* sh, uint8_t *duration, i
 			return ESP_OK;
 		}
 	}
-	vPortExitCritical(&sh->Spinlock);
 	ESP_LOGE(AM2302_TAG, "Timeout has expired after %u [us] awaiting for the bus to be set to %d", timeout, expected_level);
 	return ESP_ERR_TIMEOUT;
 }
@@ -150,16 +149,22 @@ esp_err_t AM2302read(AM2302Handler* sh){
 	_AM2302relaseBus(sh);
 
 	error_state = _AM2302AwaitPinLevel_us(sh, NO_DURATION_RECORD, LOW_LEVEL, 40);
-	if(error_state)
+	if(error_state){
+		vPortExitCritical(&sh->Spinlock);
 		return error_state;
+	}
 	
 	error_state = _AM2302AwaitPinLevel_us(sh, NO_DURATION_RECORD, HIGH_LEVEL, 80);
-	if(error_state)
+	if(error_state){
+		vPortExitCritical(&sh->Spinlock);
 		return error_state;
+	}
 	
 	error_state = _AM2302AwaitPinLevel_us(sh, NO_DURATION_RECORD, LOW_LEVEL, 80);
-	if(error_state)
+	if(error_state){
+		vPortExitCritical(&sh->Spinlock);
 		return error_state;
+	}
 	
 	error_state = _AM2302fetchData(sh);
 	vPortExitCritical(&sh->Spinlock);
