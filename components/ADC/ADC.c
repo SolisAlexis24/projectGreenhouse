@@ -8,6 +8,7 @@
  */
 
 #include "ADC.h"
+#include "hal/adc_types.h"
 
 
 esp_err_t ADCconfigUnitBasic(ADCHandler *adcHan, adc_unit_t unit){
@@ -70,22 +71,27 @@ esp_err_t ADCread(ADCHandler *adcHan){
 }
 
 
-esp_err_t LM35init(LM35Handler *lm35_han, ADCHandler *adcHan){
+esp_err_t LM135init(LM135Handler *lm35_han, ADCHandler *adcHan){
 	if(!adcHan)
 		return ESP_ERR_INVALID_ARG;
+	if(adcHan->attenuation != ADC_ATTEN_DB_12){
+		ESP_LOGI(TAG_ADC, "Attenuation must be 12 dB");
+		return ESP_ERR_INVALID_ARG;
+	}
 	lm35_han->adc = adcHan;
+	ESP_LOGI(TAG_ADC, "LM35 initialized correctly");
 	return ESP_OK;
 }
 
-esp_err_t LM35read(LM35Handler *lm35Han){
-	esp_err_t errorStatus = ADCread(lm35Han->adc);
+esp_err_t LM135read(LM135Handler *lm135Han){
+	esp_err_t errorStatus = ADCread(lm135Han->adc);
 	if(errorStatus){
-		lm35Han->temperature = 0;
-		ESP_LOGE(TAG_ADC, "LM35 acquisition failed");
+		lm135Han->temperature = 0;
+		ESP_LOGE(TAG_ADC, "LM135 acquisition failed");
 		return errorStatus;
 	}
 	int voltage = 0;
-	adc_cali_raw_to_voltage(lm35Han->adc->calibrationHandler, lm35Han->adc->rawData, &voltage);
-	lm35Han->temperature = (float)voltage / 10.0;
+	adc_cali_raw_to_voltage(lm135Han->adc->calibrationHandler, lm135Han->adc->rawData, &voltage);
+	lm135Han->temperature = ((float)voltage*0.1) - 273.25;
 	return ESP_OK;
 }

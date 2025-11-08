@@ -34,7 +34,7 @@ typedef struct {
 typedef struct{
 	ADCHandler *adc;
 	float temperature;
-}LM35Handler;
+}LM135Handler;
 
 
 static const char *TAG_ADC = "ADC";
@@ -93,9 +93,11 @@ esp_err_t ADCread(ADCHandler *adcHan);
  * @param      adcHan    ADC Handler
  *
  * - ESP_OK: 				On success 
- * - ESP_ERR_INVALID_ARG:	Handler is not initialized
+ * - ESP_ERR_INVALID_ARG:	Handler is not initialized or attenuation is diffrent from 12 dB
+ * 
+ * @note 12 dB attenuation is needed for voltage output range of LM135
  */
-esp_err_t LM35init(LM35Handler *lm35_han, ADCHandler *adcHan);
+esp_err_t LM135init(LM135Handler *lm35_han, ADCHandler *adcHan);
 
 
 /**
@@ -107,4 +109,4 @@ esp_err_t LM35init(LM35Handler *lm35_han, ADCHandler *adcHan);
  * - ESP_ERR_INVALID_ARG:	Handler ir not initialized
  * - ESP_OK:				On success
  */
-esp_err_t LM35read(LM35Handler *lm35Han);
+esp_err_t LM135read(LM135Handler *lm35Han);
