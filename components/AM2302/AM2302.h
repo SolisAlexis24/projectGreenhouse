@@ -41,7 +41,7 @@ typedef struct{
 }AM2302Handler;
 
 /**
- * @brief      Ininialize AM2302 pin
+ * @brief      Ininialize AM2302 pin and tries to read information
  *
  * @param      sh    Sensor handler that will be used with the rest of functions
  * @param[in]  pin   The pin to be used
@@ -49,6 +49,8 @@ typedef struct{
  * @return
  * - ESP_OK If given pin got initialized correctly
  * - ESP_ERR_INVALID_ARG If given pin was not appropiate for initialization or if sh is NULL
+ * - ESP_ERR_TIMEOUT If AM2302 does not respond when trying to read
+ * - ESP_ERR_INVALID_RESPONSE If checksum of response does not match
  */
 esp_err_t AM2302init(AM2302Handler *sh, gpio_num_t pin);
 

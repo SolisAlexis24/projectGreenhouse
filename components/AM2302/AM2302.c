@@ -23,7 +23,7 @@ esp_err_t AM2302init(AM2302Handler *sh, gpio_num_t pin){
 	}
 	sh->readyToUse = true;
 	spinlock_initialize(&sh->Spinlock);
-	return ESP_OK;
+	return AM2302read(sh);
 }
 
 
@@ -126,6 +126,8 @@ static esp_err_t _AM2302fetchData(AM2302Handler* sh){
 		ESP_LOGE(AM2302_TAG, "Humidity low: %02X", rawData[1]);
 		ESP_LOGE(AM2302_TAG, "Temperature high: %02X", rawData[2]);
 		ESP_LOGE(AM2302_TAG, "Temperature low: %02X", rawData[3]);
+		sh->humidity = 0.0;
+		sh->temperature = 0.0;
 		return ESP_ERR_INVALID_RESPONSE;
 	}
 
