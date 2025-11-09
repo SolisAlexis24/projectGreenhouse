@@ -118,7 +118,6 @@ static esp_err_t _AM2302fetchData(AM2302Handler* sh){
 
 	uint8_t expectedChecksum = (rawData[0] + rawData[1] + rawData[2] + rawData[3]) & 0xFF;
 	if(rawData[4] != expectedChecksum){
-		vPortExitCritical(&sh->Spinlock);
 		ESP_LOGE(AM2302_TAG, "Expected checksum: %02X", expectedChecksum);
 		ESP_LOGE(AM2302_TAG, "Received checksum: %02X", rawData[4]);
 		ESP_LOGE(AM2302_TAG, "Humifity high: %02X", rawData[0]);
