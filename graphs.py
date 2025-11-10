@@ -4,15 +4,20 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import time
 from datetime import datetime, timezone
+import os
 
 matplotlib.use('AGG')  # Usando el rasterizado a .png
 
 # Parámetros globales
-GRAPH_PERIOD_S = 30
+GRAPH_PERIOD_S = 80
 GRAPH_Y_MARGIN = 5
 LM135_GRAPH = "LT"
 AM2302T_GRAPH = "AT"
 AM2302H_GRAPH = "AH"
+MAIN_DIRECTORY = "Status"
+LM135_DATA_DIR = MAIN_DIRECTORY + "/LM135/"
+AM2302T_DATA_DIR = MAIN_DIRECTORY + "/AM2302T/"
+AM2302H_DATA_DIR = MAIN_DIRECTORY + "/AM2302H/"
 
 # Datos globales
 LM135Data = []
@@ -26,12 +31,15 @@ def graphMeasurements(data, graph_type):
     if graph_type == LM135_GRAPH:
         mylabel = "Temperatura LM135"
         units = "[°C]"
+        path = LM135_DATA_DIR
     elif graph_type == AM2302T_GRAPH:
         mylabel = "Temperatura AM2302"
         units = "[°C]"
+        path = AM2302T_DATA_DIR
     elif graph_type == AM2302H_GRAPH:
         mylabel = "Humedad"
         units = "[%]"
+        path = AM2302H_DATA_DIR
     else:
         mylabel = "?"
         units = "?"
@@ -47,14 +55,15 @@ def graphMeasurements(data, graph_type):
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%M:%S'))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
 
-    plt.title(f"{mylabel} el {timeData[0].day}/{timeData[0].month}/{timeData[0].year} a las {timeData[0].hour} h")
+    plt.title(f"Registro de: {mylabel} el {timeData[0].day}/{timeData[0].month}/{timeData[0].year} a las {timeData[0].hour} h")
     plt.xlabel("Tiempo [min:seg]")
     plt.ylabel(f"{mylabel} {units}")
     plt.legend()
     plt.tight_layout()
 
-    filename = f"{mylabel}.png"
+    filename = f"{path}{mylabel}@{timeData[0].day}-{timeData[0].month}-{timeData[0].year}_{timeData[0].hour}:{timeData[0].minute}.png"
     plt.savefig(filename)
+    plt.clf()
     plt.close(fig)
     print(f"Nueva gráfica disponible: {filename}")
 
@@ -96,3 +105,29 @@ def periodicGraphsUpdate():
             graphMeasurements(AM2302HData, AM2302H_GRAPH)
             resetMeasurements()
         time.sleep(1)
+
+
+def createDataDirectories():
+    try:
+        os.mkdir(MAIN_DIRECTORY)
+        print(f"Directory '{MAIN_DIRECTORY}' created successfully.")
+    except FileExistsError:
+        ...
+
+    try:
+        os.mkdir(LM135_DATA_DIR)
+        print(f"Directory '{LM135_DATA_DIR}' created successfully.")
+    except FileExistsError:
+        ...
+
+    try:
+        os.mkdir(AM2302T_DATA_DIR)
+        print(f"Directory '{AM2302T_DATA_DIR}' created successfully.")
+    except FileExistsError:
+        ...
+
+    try:
+        os.mkdir(AM2302H_DATA_DIR)
+        print(f"Directory '{AM2302H_DATA_DIR}' created successfully.")
+    except FileExistsError:
+        ...

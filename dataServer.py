@@ -5,7 +5,9 @@ from graphs import (
     storeData,
     resetMeasurements,
     periodicGraphsUpdate,
+    createDataDirectories
 )
+
 
 def waitClientConnection(server_socket):
     connection, client_address = server_socket.accept()
@@ -56,6 +58,8 @@ def serveForever():
     server_socket.listen(1)
     print("Servidor escuchando en el puerto 42069...")
 
+    createDataDirectories()
+    
     while True:
         connection, client_address = waitClientConnection(server_socket)
         connection.settimeout(30)
