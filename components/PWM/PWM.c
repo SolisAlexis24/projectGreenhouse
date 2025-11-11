@@ -1,6 +1,6 @@
 /**
  *************************************
- * @file: LCD1602.h
+ * @file: PWM.c
  * @author: Solis Hernandez Ian Alexis
  * @purpose: Source file for PWM Fan control
  * @year: 2025
