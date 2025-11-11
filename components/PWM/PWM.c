@@ -2,7 +2,6 @@
  *************************************
  * @file: PWM.c
  * @author: Solis Hernandez Ian Alexis
- * @purpose: Source file for PWM Fan control
  * @year: 2025
  * @licence: MIT
  * ***********************************

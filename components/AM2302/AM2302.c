@@ -1,6 +1,6 @@
 /**
  *************************************
- * @file: AM2302,c
+ * @file: AM2302.c
  * @author: Solis Hernandez Ian Alexis
  * @year: 2025
  * @licence: MIT

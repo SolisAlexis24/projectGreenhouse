@@ -1,19 +1,13 @@
+/**
+ *************************************
+ * @file: WiFi.c
+ * @author: Solis Hernandez Ian Alexis
+ * @year: 2025
+ * @licence: MIT
+ * ***********************************
+ */
 #include "WiFi.h"
-#include "cJSON.h"
-#include "cc.h"
-#include "esp_err.h"
-#include "esp_event.h"
-#include "esp_event_base.h"
-#include "esp_log.h"
-#include "esp_netif_types.h"
-#include "esp_wifi.h"
-#include "esp_wifi_types_generic.h"
-#include "freertos/idf_additions.h"
-#include "lwip/inet.h"
-#include "lwip/sockets.h"
-#include <stdio.h>
-#include <strings.h>
-#include <unistd.h>
+
 
 static EventGroupHandle_t wifiEventGroup;
 static int _retryNum = 0;
