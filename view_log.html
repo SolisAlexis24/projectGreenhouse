@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Log</title>
+  <style>
+    body { font-family: monospace; background: #111; color: #0f0; padding: 20px; }
+    pre { white-space: pre-wrap; word-wrap: break-word; }
+  </style>
+</head>
+<body>
+  <h2>Acciones tomadas por el sistema: Acción - Fecha</h2>
+  <pre id="log"></pre>
+
+  <script>
+    async function loadLog() {
+      const res = await fetch('/api/log');
+      const text = await res.text();
+      document.getElementById('log').textContent = text;
+    }
+    loadLog();
+  </script>
+</body>
+</html>

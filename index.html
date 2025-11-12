@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel de Control y Monitoreo</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      height: 100vh;
+      background-color: #f0f0f0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .container {
+      display: flex;
+      flex: 1;
+      gap: 20px;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+
+    .column {
+      flex: 1;
+      background-color: white;
+      padding: 20px;
+      border: 1px solid #ccc;
+      display: flex;
+      flex-direction: column;
+    }
+
+    h2 {
+      margin-top: 0;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+      text-align: center;
+    }
+
+    .form-group {
+      margin-bottom: 15px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 25px;
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .speed-container {
+      display: flex;
+      justify-content: center;
+      width: 100%;
+    }
+
+    input[type="number"] {
+      padding: 8px;
+      width: 50%;
+      text-align: center;
+      font-size: 16px;
+    }
+
+   .checkbox-group {
+     display: flex;
+     align-items: center;  /* ← centra verticalmente el label y checkbox */
+     justify-content: center;
+     gap: 10px;
+     margin: 10px 0;
+   }
+
+   .checkbox-group input[type="checkbox"] {
+     width: 20px;
+     height: 20px;
+     vertical-align: middle; /* ← asegura alineación vertical */
+   }
+
+   .checkbox-group label {
+     margin: 0;
+     font-size: 17px;
+     font-weight: normal;
+     vertical-align: middle;
+   }
+    .units-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+    }
+
+    .image-container {
+      flex: 1;
+      background-color: #eee;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px dashed #999;
+      margin-top: 10px;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        flex-direction: column;
+      }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Columna izquierda -->
+    <div class="column">
+      <h2>Control del display</h2>
+
+      <div class="form-group">
+        <label for="speed">Velocidad de marquesina [desplazamiento/segundo]:</label>
+        <div class="speed-container">
+          <input type="number" id="speed" name="speed" min="0" max="100" value="1" step="0.25">
+    <button id="apply-button" onclick="handle(this, 'update_speed')">Aplicar</button>
+        </div>
+      </div>
+
+      <div class="units-group">
+        <h3>Unidades de temperatura para el display</h3>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="celsius" name="units" value="celsius" onchange="handle(this,'update_units')">
+          <label for="celsius">Celsius</label>
+        </div>
+
+        <div class="checkbox-group">
+          <input type="checkbox" id="fahrenheit" name="units" value="fahrenheit" onchange="handle(this, 'update_units')">
+          <label for="fahrenheit">Fahrenheit</label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Columna derecha -->
+    <div class="column">
+      <h2>Panel de Archivos</h2>
+      <div style="display: flex; flex-direction: column; gap: 15px;">
+        <button onclick="window.location.href='gallery_LM135.html'">Registro LM135</button>
+        <button onclick="window.location.href='gallery_AM2302T.html'">Registro AM2302 - Temperatura</button>
+        <button onclick="window.location.href='gallery_AM2302H.html'">Registro AM2302 - Humedad</button>
+        <button onclick="window.location.href='view_log.html'">Ver LOG de acciones</button>
+      </div>
+    </div>
+  </div>
+
+  <script langiage ="javascript">
+function handle(sender, action) {
+  // Obtener el valor del input de velocidad
+  const delay = document.getElementById("speed").value;
+
+  // Obtener estado de los checkboxes
+  const celsius = document.getElementById("celsius").checked;
+  const fahrenheit = document.getElementById("fahrenheit").checked;
+
+  // Enviar los datos al servidor
+  submit(action, delay, celsius, fahrenheit);
+}
+
+function submit(action, delay, celsius, fahrenheit) {
+  const xhr = new XMLHttpRequest();
+  xhr.open("POST", window.location.href, true);
+  xhr.setRequestHeader("Content-Type", "application/json");
+
+  const data = {
+    action: action,
+    delay: delay,
+    celsius: celsius,
+    fahrenheit: fahrenheit
+  };
+
+  xhr.send(JSON.stringify(data));
+
+}
+
+function refreshImage() {
+  const img = document.getElementById('tempImage');
+  const oldSrc = img.src;
+  img.src = ''; // truco: limpia primero
+  img.src = oldSrc; // vuelve a cargar la misma URL
+}
+
+// Refrescar cada 30 segundos
+setInterval(refreshImage, 30000);
+
+  </script>
+</body>
+</html>

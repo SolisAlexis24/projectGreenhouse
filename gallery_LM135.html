@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>LM135</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f9f9f9; margin: 0; padding: 20px; }
+    h2 { text-align: center; }
+    .gallery {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 15px;
+    }
+    .gallery img {
+      max-width: 200px;
+      cursor: pointer;
+      border: 2px solid #ccc;
+      border-radius: 8px;
+      transition: transform 0.2s;
+    }
+    .gallery img:hover { transform: scale(1.05); border-color: #555; }
+    .fullscreen {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      justify-content: center;
+      align-items: center;
+    }
+    .fullscreen img {
+      max-width: 90%; max-height: 90%;
+    }
+  </style>
+</head>
+<body>
+  <h2>Registro de mediciones del sensor de temperatura LM135</h2>
+  <div class="gallery" id="gallery"></div>
+
+  <div class="fullscreen" id="fullscreen" onclick="this.style.display='none'">
+    <img id="fullscreenImg" src="">
+  </div>
+
+  <script>
+    async function loadImages() {
+      const res = await fetch('/api/images/LM135');
+      const files = await res.json();
+      const gallery = document.getElementById('gallery');
+      files.forEach(f => {
+        const img = document.createElement('img');
+        img.src = f;
+        img.onclick = () => {
+          document.getElementById('fullscreenImg').src = f;
+          document.getElementById('fullscreen').style.display = 'flex';
+        };
+        gallery.appendChild(img);
+      });
+    }
+    loadImages();
+  </script>
+</body>
+</html>
