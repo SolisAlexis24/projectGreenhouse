@@ -80,7 +80,6 @@ static esp_err_t _AM2302AwaitPinLevel_us(AM2302Handler* sh, uint8_t *duration, i
 			return ESP_OK;
 		}
 	}
-	ESP_LOGE(AM2302_TAG, "Timeout has expired after %u [us] awaiting for the bus to be set to %d", timeout, expected_level);
 	return ESP_ERR_TIMEOUT;
 }
 
@@ -118,12 +117,6 @@ static esp_err_t _AM2302fetchData(AM2302Handler* sh){
 
 	uint8_t expectedChecksum = (rawData[0] + rawData[1] + rawData[2] + rawData[3]) & 0xFF;
 	if(rawData[4] != expectedChecksum){
-		ESP_LOGE(AM2302_TAG, "Expected checksum: %02X", expectedChecksum);
-		ESP_LOGE(AM2302_TAG, "Received checksum: %02X", rawData[4]);
-		ESP_LOGE(AM2302_TAG, "Humifity high: %02X", rawData[0]);
-		ESP_LOGE(AM2302_TAG, "Humidity low: %02X", rawData[1]);
-		ESP_LOGE(AM2302_TAG, "Temperature high: %02X", rawData[2]);
-		ESP_LOGE(AM2302_TAG, "Temperature low: %02X", rawData[3]);
 		sh->humidity = 0.0;
 		sh->temperature = 0.0;
 		return ESP_ERR_INVALID_RESPONSE;
