@@ -9,6 +9,8 @@
 
 #include "AM2302.h"
 
+static const char *AM2302_TAG = "AM2302";
+
 esp_err_t AM2302init(AM2302Handler *sh, gpio_num_t pin){
 	if(!sh)
 		return ESP_ERR_INVALID_ARG;

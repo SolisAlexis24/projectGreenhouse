@@ -11,12 +11,14 @@
 #include "esp_err.h"
 #include "hal/ledc_types.h"
 #include "soc/gpio_num.h"
+#include "esp_log.h"
+#include "hal/ledc_types.h"
+#include "soc/clk_tree_defs.h"
+#include <stdbool.h>
+#include <stdint.h>
 
 #define DEF_MODE LEDC_LOW_SPEED_MODE
 #define MAX_NUM_11_BITS 2048
-
-static const char *PWM_TAG = "PWM";
-
 
 typedef struct{
 	ledc_channel_t PWMchannel;

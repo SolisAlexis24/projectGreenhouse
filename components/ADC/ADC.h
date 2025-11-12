@@ -8,7 +8,6 @@
  */
 
 #pragma once
-
 #include "hal/adc_types.h"
 #include "esp_adc/adc_oneshot.h"
 #include "esp_err.h"
@@ -16,8 +15,6 @@
 #include "esp_adc/adc_oneshot.h"
 #include "esp_log.h"
 #include "hal/adc_types.h"
-
-
 
 
 typedef struct {
@@ -35,9 +32,6 @@ typedef struct{
 	ADCHandler *adc;
 	float temperature;
 }LM135Handler;
-
-
-static const char *TAG_ADC = "ADC";
 
 
 /**

@@ -8,13 +8,8 @@
  */
 
 #include "PWM.h"
-#include "driver/ledc.h"
-#include "esp_err.h"
-#include "esp_log.h"
-#include "hal/ledc_types.h"
-#include "soc/clk_tree_defs.h"
-#include <stdbool.h>
-#include <stdint.h>
+
+static const char *PWM_TAG = "PWM";
 
 esp_err_t FanInit(FanHandler *fanHan, gpio_num_t pin, ledc_channel_t channel){
 	if(!fanHan)

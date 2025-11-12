@@ -8,6 +8,7 @@
  */
 #include "WiFi.h"
 
+static const char *WiFi_TAG = "WiFi";
 
 static EventGroupHandle_t wifiEventGroup;
 static int _retryNum = 0;

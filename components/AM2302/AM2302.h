@@ -29,8 +29,6 @@
 #define AM2302_DATA_BITS 40
 #define MINIMUM_RESOLUTION_DELAY 2
 
-
-static const char *AM2302_TAG = "AM2302";
 typedef struct{
 	gpio_num_t pin;
 	bool readyToUse;

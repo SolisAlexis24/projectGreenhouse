@@ -8,7 +8,8 @@
  */
 
 #include "ADC.h"
-#include "hal/adc_types.h"
+
+static const char *TAG_ADC = "ADC";
 
 
 esp_err_t ADCconfigUnitBasic(ADCHandler *adcHan, adc_unit_t unit){

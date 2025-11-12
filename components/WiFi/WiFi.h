@@ -41,9 +41,6 @@
 #define SERVER_IP "192.168.1.172"
 #define SERVER_PORT htons(42069)
 
-static const char *WiFi_TAG = "WiFi";
-
-
 /**
  * @brief      Initializes the WiFi interface and connects to an AP
  *
