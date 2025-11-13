@@ -2,9 +2,9 @@
 # ## ###############################################
 #
 # webserver.py
-# Starts a custom webserver and handles all requests
+# Servidor web simple con API para listar imágenes y leer logs
 #
-# Autor: Mauricio Matamoros
+# Autor: Mauricio Matamoros / adaptado por Ian Solis
 # License: MIT
 #
 # ## ###############################################
@@ -14,65 +14,58 @@ import json
 import magic
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-# Nombre o dirección IP del sistema anfitrión del servidor web
-# address = "localhost"
+# Configuración del servidor
 address = "192.168.1.172"
-# Puerto en el cual el servidor estará atendiendo solicitudes HTTP
-# El default de un servidor web en produción debe ser 80
 port = 8080
 
+# Carpeta base (sandbox)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 class WebServer(BaseHTTPRequestHandler):
-    """Sirve cualquier archivo encontrado en el servidor"""
+
     def _serve_file(self, rel_path):
-        # Normaliza ruta y corrige espacios codificados
-        rel_path = rel_path.replace("%20", " ")
+        """Sirve archivos desde BASE_DIR de forma segura"""
+        rel_path = rel_path.replace("%20", " ")  # corrige espacios
+        safe_path = os.path.normpath(os.path.join(BASE_DIR, rel_path))
 
-        # Si intenta acceder a /Status/, redirigir a la ruta real
-        if rel_path.startswith("Status/"):
-            abs_path = os.path.join("/home/pi", rel_path)
-        else:
-            abs_path = rel_path
+        # Bloquea acceso fuera del sandbox
+        if not safe_path.startswith(BASE_DIR):
+            self.send_error(403, "Access denied")
+            return
 
-        if not os.path.isfile(abs_path):
-            self.send_error(404, f"File not found: {abs_path}")
+        if not os.path.isfile(safe_path):
+            self.send_error(404, f"File not found: {safe_path}")
             return
 
         self.send_response(200)
         mime = magic.Magic(mime=True)
-        self.send_header("Content-type", mime.from_file(abs_path))
+        self.send_header("Content-type", mime.from_file(safe_path))
         self.end_headers()
-        with open(abs_path, 'rb') as file:
+        with open(safe_path, 'rb') as file:
             self.wfile.write(file.read())
 
-
-    """Sirve el archivo de interfaz de usuario"""
     def _serve_ui_file(self):
-        if not os.path.isfile("index.html"):
-            err = "index.html not found."
-            self.wfile.write(bytes(err, "utf-8"))
-            print(err)
+        """Sirve index.html"""
+        index_path = os.path.join(BASE_DIR, "index.html")
+        if not os.path.isfile(index_path):
+            self.send_error(404, "index.html not found")
             return
-        try:
-            with open("index.html", "r") as f:
-                content = "\n".join(f.readlines())
-        except:
-            content = "Error reading index.html"
+        with open(index_path, "r") as f:
+            content = f.read()
         self.wfile.write(bytes(content, "utf-8"))
 
-    def _parse_post(self, json_obj):
-        if not 'action' in json_obj:
-            return
-
     def _serve_json(self, data):
+        """Sirve una respuesta JSON"""
         self.send_response(200)
         self.send_header("Content-type", "application/json")
         self.end_headers()
         self.wfile.write(bytes(json.dumps(data), "utf-8"))
 
+    def _parse_post(self, json_obj):
+        if not 'action' in json_obj:
+            return
 
-    """do_GET controla todas las solicitudes recibidas vía GET, es
-    decir, páginas. Por seguridad, no se analizan variables que lleguen
-    por esta vía"""
+    # -------------------- GET --------------------
     def do_GET(self):
         if self.path == '/':
             self.send_response(200)
@@ -84,23 +77,22 @@ class WebServer(BaseHTTPRequestHandler):
         # API para listar imágenes
         if self.path.startswith('/api/images/'):
             folder = self.path.split('/')[-1]
-            base_dir = f"/home/pi/Status/{folder}"
+            base_dir = os.path.join(BASE_DIR, "Status", folder)
             if not os.path.isdir(base_dir):
-                self.send_error(404)
+                self.send_error(404, f"Folder not found: {folder}")
                 return
+
             images = [
-                f"/home/pi/Status/{folder}/{f}"
+                f"/Status/{folder}/{f}"
                 for f in os.listdir(base_dir)
                 if f.lower().endswith(('.png', '.jpg', '.jpeg', '.gif'))
             ]
-            # Devolver solo nombres relativos
-            web_paths = [f"/Status/{folder}/{os.path.basename(f)}" for f in images]
-            self._serve_json(web_paths)
+            self._serve_json(images)
             return
 
-        # API para ver el log
+        # API para leer log
         if self.path == '/api/log':
-            log_path = "/home/pi/Status/actions.log"
+            log_path = os.path.join(BASE_DIR, "Status", "actions.log")
             if not os.path.isfile(log_path):
                 self.send_error(404)
                 return
@@ -111,49 +103,35 @@ class WebServer(BaseHTTPRequestHandler):
                 self.wfile.write(f.read().encode('utf-8'))
             return
 
-        # Si no coincide con API, servir archivos estáticos
-        self._serve_file(self.path[1:])
+        # Servir imágenes u otros archivos dentro del sandbox
+        rel_path = self.path[1:]  # quitar '/'
+        self._serve_file(rel_path)
 
-    """do_POST controla todas las solicitudes recibidas vía POST, es
-    decir, envíos de formulario. Aquí se gestionan los comandos para
-    la Raspberry Pi"""
+    # -------------------- POST --------------------
     def do_POST(self):
-        # Primero se obtiene la longitud de la cadena de datos recibida
-        content_length = int(self.headers.get('Content-Length'))
+        content_length = int(self.headers.get('Content-Length', 0))
         if content_length < 1:
             return
-        # Después se lee toda la cadena de datos
         post_data = self.rfile.read(content_length)
-        # Finalmente, se decodifica el objeto JSON y se procesan los datos.
-        # Se descartan cadenas de datos mal formados
         try:
             jobj = json.loads(post_data.decode("utf-8"))
             self._parse_post(jobj)
-        except:
+        except Exception:
             print(sys.exc_info())
-            print("Datos POST no recnocidos")
+            print("Datos POST no reconocidos")
 
 def main():
-    # Inicializa una nueva instancia de HTTPServer con el
-    # HTTPRequestHandler definido en este archivo
     webServer = HTTPServer((address, port), WebServer)
     print("Servidor iniciado")
-    print ("\tAtendiendo solicitudes en http://{}:{}".format(
-        address, port))
+    print(f"\tAtendiendo solicitudes en http://{address}:{port}")
     try:
-        # Mantiene al servidor web ejecutándose en segundo plano
         webServer.serve_forever()
     except KeyboardInterrupt:
-        # Maneja la interrupción de cierre CTRL+C
         pass
-    except:
+    except Exception:
         print(sys.exc_info())
-    # Detiene el servidor web cerrando todas las conexiones
     webServer.server_close()
-    # Reporta parada del servidor web en consola
     print("Server stopped.")
 
-
-# Punto de anclaje de la función main
 if __name__ == "__main__":
     main()
