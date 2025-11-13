@@ -1,10 +1,9 @@
-#! /usr/bin/env python3
 # ## ###############################################
 #
-# webserver.py
-# Servidor web simple con API para listar imágenes y leer logs
+# webServer.py
+# Servidor web simple
 #
-# Autor: Mauricio Matamoros / adaptado por Ian Solis
+# Autor: Mauricio Matamoros / adaptado por Alexis Solis
 # License: MIT
 #
 # ## ###############################################
@@ -12,6 +11,7 @@ import os
 import sys
 import json
 import magic
+from dataServer import startDataServer
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
 # Configuración del servidor
@@ -120,7 +120,8 @@ class WebServer(BaseHTTPRequestHandler):
             print(sys.exc_info())
             print("Datos POST no reconocidos")
 
-def main():
+
+def startWebServer():
     webServer = HTTPServer((address, port), WebServer)
     print("Servidor iniciado")
     print(f"\tAtendiendo solicitudes en http://{address}:{port}")
@@ -132,6 +133,3 @@ def main():
         print(sys.exc_info())
     webServer.server_close()
     print("Server stopped.")
-
-if __name__ == "__main__":
-    main()

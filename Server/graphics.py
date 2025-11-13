@@ -45,7 +45,7 @@ def graphMeasurements(data, graph_type):
         units = "?"
 
     if len(data) == 0:
-        print(f"Datos vacíos para {mylabel}, no se generará gráfica.")
+        print(f"[Servidor de datos]: Datos vacíos para {mylabel}, no se generará gráfica.")
         return
 
     fig, ax = plt.subplots()
@@ -65,7 +65,7 @@ def graphMeasurements(data, graph_type):
     plt.savefig(filename)
     plt.clf()
     plt.close(fig)
-    print(f"Nueva gráfica disponible: {filename}")
+    print(f"[Servidor de datos]: Nueva gráfica disponible: {mylabel}")
 
 
 def storeData(receivedJSON):
@@ -110,24 +110,24 @@ def periodicGraphsUpdate():
 def createDataDirectories():
     try:
         os.mkdir(MAIN_DIRECTORY)
-        print(f"Directory '{MAIN_DIRECTORY}' created successfully.")
+        print(f"[Servidor de datos]: Directorio '{MAIN_DIRECTORY}' creado.")
     except FileExistsError:
         ...
 
     try:
         os.mkdir(LM135_DATA_DIR)
-        print(f"Directory '{LM135_DATA_DIR}' created successfully.")
+        print(f"[Servidor de datos]: Directorio '{LM135_DATA_DIR}' creado.")
     except FileExistsError:
         ...
 
     try:
         os.mkdir(AM2302T_DATA_DIR)
-        print(f"Directory '{AM2302T_DATA_DIR}' created successfully.")
+        print(f"[Servidor de datos]: Directorio '{AM2302T_DATA_DIR}' creado.")
     except FileExistsError:
         ...
 
     try:
         os.mkdir(AM2302H_DATA_DIR)
-        print(f"Directory '{AM2302H_DATA_DIR}' created successfully.")
+        print(f"[Servidor de datos]: Directorio '{AM2302H_DATA_DIR}' creado.")
     except FileExistsError:
         ...
