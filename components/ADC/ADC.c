@@ -80,7 +80,6 @@ esp_err_t LM135init(LM135Handler *lm35_han, ADCHandler *adcHan){
 		return ESP_ERR_INVALID_ARG;
 	}
 	lm35_han->adc = adcHan;
-	ESP_LOGI(TAG_ADC, "LM35 initialized correctly");
 	return ESP_OK;
 }
 
