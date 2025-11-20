@@ -1,6 +1,15 @@
 # El siguiente conjunto de líneas recupera el nombre del componente.
 set(COMPONENT_REQUIRES "")
-set(COMPONENT_PRIV_REQUIRES esp_driver_i2c LCD1602)
+set(COMPONENT_PRIV_REQUIRES 
+            esp_driver_i2c 
+            esp_driver_gpio
+            nvs_flash
+            LCD1602 
+            AM2302
+            ADC
+            WiFi
+            PWM
+            zeroCross)
 
 idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS "."
