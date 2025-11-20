@@ -58,10 +58,12 @@ esp_err_t setFanDutyCyclePerc(FanHandler *fanHan, float DCpercentage){
 		return ESP_ERR_INVALID_ARG;
 
 	uint32_t dutyCycleInt;
-	if(DCpercentage >= 1.0 || DCpercentage <= 0.0)
-		dutyCycleInt = MAX_NUM_11_BITS;
+	if(DCpercentage >= 1.0)
+	    dutyCycleInt = MAX_NUM_11_BITS;
+	else if(DCpercentage <= 0.0)
+	    dutyCycleInt = 0;
 	else
-		dutyCycleInt = (uint32_t)(MAX_NUM_11_BITS * DCpercentage);
+	    dutyCycleInt = (uint32_t)(MAX_NUM_11_BITS * DCpercentage);
 
 	return ledc_set_duty_and_update(fanHan->PWMmode, fanHan->PWMchannel, dutyCycleInt, 0);
 }
