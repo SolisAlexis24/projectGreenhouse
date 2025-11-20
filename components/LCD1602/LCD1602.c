@@ -26,12 +26,12 @@ static esp_err_t _LCDpulseEnable(LCD1602 *lcd, uint8_t data){
     // Set enable bit high
     buffer = data | LCD_EN_BIT;
     errorStatus += i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
-    vTaskDelay(pdMS_TO_TICKS(1));
+    esp_rom_delay_us(1000);
     
     // Set enable bit low
     buffer = data & ~LCD_EN_BIT;
     errorStatus += i2c_master_transmit(lcd->i2c_handler, &buffer, 1, I2C_MASTER_TIMEOUT_MS / portTICK_PERIOD_MS);
-    vTaskDelay(pdMS_TO_TICKS(1));
+    esp_rom_delay_us(1000);
 
     if(errorStatus)
         return ESP_ERR_TIMEOUT;
@@ -83,18 +83,18 @@ esp_err_t LCDinit(LCD1602 *lcd, uint8_t i2c_addr, int i2c_speed,i2c_master_bus_h
     lcd->isConnected = true;
     lcd->BackgroundLight = BackgroundLightON;
     
-    vTaskDelay(pdMS_TO_TICKS(100));
+    esp_rom_delay_us(1000*100);
     
     errorStatus += LCDsendByte(lcd, LCD_INIT, sendAsCommand);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    esp_rom_delay_us(1000*5);
     errorStatus += LCDsendByte(lcd, LCD_4BITS_MODE, sendAsCommand);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    esp_rom_delay_us(1000*5);
     errorStatus += LCDsendByte(lcd, LCD_2LINES_35P, sendAsCommand);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    esp_rom_delay_us(1000*5);
     errorStatus += LCDsendByte(lcd, LCD_EN_DIS_HID_CUR, sendAsCommand);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    esp_rom_delay_us(1000*5);
     errorStatus += LCDsendByte(lcd, LCD_CLEAR, sendAsCommand);
-    vTaskDelay(pdMS_TO_TICKS(5));
+    esp_rom_delay_us(1000*5);
 
     if(errorStatus)
         return ESP_ERR_TIMEOUT;

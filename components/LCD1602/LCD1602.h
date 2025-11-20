@@ -13,6 +13,7 @@
 #include "driver/i2c_master.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
+#include "esp_rom_sys.h"
 #include "esp_err.h"
 #include <stdint.h>
 
