@@ -30,7 +30,7 @@ esp_err_t AM2302init(AM2302Handler *sh, gpio_num_t pin){
 
 
 /**
- * @brief      Send start signal to AM2302 sensor: 2 ms low
+ * @brief      Send start signal to AM2302 sensor: 1 ms low
  *
  * @param[in]      sh Sensor Handler
  * 
