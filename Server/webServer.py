@@ -11,8 +11,8 @@ import os
 import sys
 import json
 import magic
-from dataServer import startDataServer
 from http.server import BaseHTTPRequestHandler, HTTPServer
+from dataServer import setFanPower, setDesiredTemperature, toggleIrrigation
 
 # Configuración del servidor
 address = "192.168.1.172"
@@ -62,8 +62,36 @@ class WebServer(BaseHTTPRequestHandler):
         self.wfile.write(bytes(json.dumps(data), "utf-8"))
 
     def _parse_post(self, json_obj):
-        if not 'action' in json_obj:
+        if 'action' not in json_obj:
             return
+
+        switcher = {
+            'update_fan': setFanPower,
+            'toggle_irrigation': toggleIrrigation,
+            'update_temperature': setDesiredTemperature
+        }
+
+        func = switcher.get(json_obj['action'], None)
+
+        if func:
+            action = json_obj['action']
+
+            # --- Control del ventilador ---
+            if action == 'update_fan':
+                power = float(json_obj.get('fanPower', 0))
+                print(f"\tCall {func}(power={power})")
+                func(power)
+
+            # --- Toggle del sistema de irrigado ---
+            elif action == 'toggle_irrigation':
+                print(f"\tCall {func}()")
+                func()
+
+            # --- Actualización de la temperatura deseada ---
+            elif action == 'update_temperature':
+                temp = float(json_obj.get('targetTemp', 25))
+                print(f"\tCall {func}(temp={temp})")
+                func(temp)
 
     # -------------------- GET --------------------
     def do_GET(self):

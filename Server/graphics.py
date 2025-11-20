@@ -48,6 +48,10 @@ def graphMeasurements(data, graph_type):
         print(f"[Servidor de datos]: Datos vacíos para {mylabel}, no se generará gráfica.")
         return
 
+    if len(data) != len(timeData):
+        print(f"[Servidor de datos]: Datos de {mylabel} no coinciden con datos de tiempo, no se generará gráfica.")
+        return
+
     fig, ax = plt.subplots()
     ax.plot(timeData, data, label=mylabel)
 

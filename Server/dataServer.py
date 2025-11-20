@@ -92,6 +92,39 @@ def handleClientConnection(server_socket):
             time.sleep(1)  # Pequeña pausa antes de reintentar
 
 
+def setFanPower(power):
+    """Configura la potencia del ventilador
+    Power se divide pra dejarlo en rango [0, 1]"""
+    sendFunctionToClient("setFanPower", power/100.0)
+
+
+def setDesiredTemperature(temperature):
+    """Configura la temperatura deseada del sistema"""
+    sendFunctionToClient("setDesiredTemperature", temperature)
+
+
+def toggleIrrigation():
+    """Envia la funcion para cambiar el estado del iriigador"""
+    sendFunctionToClient("toggleIrrigation", "")
+
+
+def sendFunctionToClient(Function, Argument):
+    """Envia un JSON con la estructura funcion:argumento al microcontrolador"""
+    global client_connection, client_address
+    if not client_connection:
+        print(f"[Servidor de datos]: No hay cliente conectado, no se puede enviar {Function}")
+        return
+
+    try:
+        funcDict = {"function": Function, "argument": Argument}
+        funcJSON = json.dumps(funcDict)
+        funcEncod = funcJSON.encode()
+        client_connection.sendall(funcEncod)
+
+    except Exception as e:
+        print(f"[Servidor de datos]: Error enviando función {Function}: {e}")
+
+
 def startDataServer():
     """Inicia el servidor TCP y espera conexiones entrantes."""
     createDataDirectories()

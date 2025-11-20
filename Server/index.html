@@ -39,65 +39,29 @@
     }
 
     .form-group {
-      margin-bottom: 15px;
+      margin-bottom: 20px;
+      text-align: center;
     }
 
     label {
       display: block;
-      margin-bottom: 25px;
-      text-align: center;
+      margin-bottom: 10px;
       font-weight: bold;
       font-size: 18px;
     }
 
-    .speed-container {
-      display: flex;
-      justify-content: center;
-      width: 100%;
-    }
-
     input[type="number"] {
       padding: 8px;
-      width: 50%;
+      width: 60%;
       text-align: center;
       font-size: 16px;
     }
 
-   .checkbox-group {
-     display: flex;
-     align-items: center;  /* ← centra verticalmente el label y checkbox */
-     justify-content: center;
-     gap: 10px;
-     margin: 10px 0;
-   }
-
-   .checkbox-group input[type="checkbox"] {
-     width: 20px;
-     height: 20px;
-     vertical-align: middle; /* ← asegura alineación vertical */
-   }
-
-   .checkbox-group label {
-     margin: 0;
-     font-size: 17px;
-     font-weight: normal;
-     vertical-align: middle;
-   }
-    .units-group {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      text-align: center;
-    }
-
-    .image-container {
-      flex: 1;
-      background-color: #eee;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      border: 1px dashed #999;
+    button {
       margin-top: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
     }
 
     @media (max-width: 768px) {
@@ -105,39 +69,37 @@
         flex-direction: column;
       }
     }
-
   </style>
 </head>
 <body>
   <div class="container">
-    <!-- Columna izquierda -->
-    <div class="column">
-      <h2>Control del display</h2>
 
+    <!-- Nueva columna de control reemplazando la anterior -->
+    <div class="column">
+      <h2>Control del Sistema</h2>
+
+      <!-- Potencia del ventilador -->
       <div class="form-group">
-        <label for="speed">Velocidad de marquesina [desplazamiento/segundo]:</label>
-        <div class="speed-container">
-          <input type="number" id="speed" name="speed" min="0" max="100" value="1" step="0.25">
-    <button id="apply-button" onclick="handle(this, 'update_speed')">Aplicar</button>
-        </div>
+        <label for="fanPower">Potencia del ventilador (%)</label>
+        <input type="number" id="fanPower" name="fanPower" min="0" max="100" value="50">
+        <button onclick="sendUpdate('update_fan')">Aplicar</button>
       </div>
 
-      <div class="units-group">
-        <h3>Unidades de temperatura para el display</h3>
+      <!-- Toggle del sistema de irrigado -->
+      <div class="form-group">
+        <label for="irrigation">Sistema de irrigado</label>
+        <button id="irrigationBtn" onclick="sendUpdate('toggle_irrigation')">Activar / Desactivar</button>
+      </div>
 
-        <div class="checkbox-group">
-          <input type="checkbox" id="celsius" name="units" value="celsius" onchange="handle(this,'update_units')">
-          <label for="celsius">Celsius</label>
-        </div>
-
-        <div class="checkbox-group">
-          <input type="checkbox" id="fahrenheit" name="units" value="fahrenheit" onchange="handle(this, 'update_units')">
-          <label for="fahrenheit">Fahrenheit</label>
-        </div>
+      <!-- Temperatura deseada -->
+      <div class="form-group">
+        <label for="targetTemp">Temperatura deseada (°C)</label>
+        <input type="number" id="targetTemp" name="targetTemp" min="0" max="120" value="25">
+        <button onclick="sendUpdate('update_temperature')">Aplicar</button>
       </div>
     </div>
 
-    <!-- Columna derecha -->
+    <!-- Columna derecha existente -->
     <div class="column">
       <h2>Panel de Archivos</h2>
       <div style="display: flex; flex-direction: column; gap: 15px;">
@@ -149,45 +111,20 @@
     </div>
   </div>
 
-  <script langiage ="javascript">
-function handle(sender, action) {
-  // Obtener el valor del input de velocidad
-  const delay = document.getElementById("speed").value;
+  <script>
+    function sendUpdate(action) {
+      const data = {
+        action: action,
+        fanPower: document.getElementById("fanPower").value,
+        targetTemp: document.getElementById("targetTemp").value
+      };
 
-  // Obtener estado de los checkboxes
-  const celsius = document.getElementById("celsius").checked;
-  const fahrenheit = document.getElementById("fahrenheit").checked;
-
-  // Enviar los datos al servidor
-  submit(action, delay, celsius, fahrenheit);
-}
-
-function submit(action, delay, celsius, fahrenheit) {
-  const xhr = new XMLHttpRequest();
-  xhr.open("POST", window.location.href, true);
-  xhr.setRequestHeader("Content-Type", "application/json");
-
-  const data = {
-    action: action,
-    delay: delay,
-    celsius: celsius,
-    fahrenheit: fahrenheit
-  };
-
-  xhr.send(JSON.stringify(data));
-
-}
-
-function refreshImage() {
-  const img = document.getElementById('tempImage');
-  const oldSrc = img.src;
-  img.src = ''; // truco: limpia primero
-  img.src = oldSrc; // vuelve a cargar la misma URL
-}
-
-// Refrescar cada 30 segundos
-setInterval(refreshImage, 30000);
-
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", window.location.href, true);
+      xhr.setRequestHeader("Content-Type", "application/json");
+      xhr.send(JSON.stringify(data));
+    }
   </script>
+
 </body>
 </html>
