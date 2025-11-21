@@ -213,7 +213,7 @@ void decodeJSONServerMessage(const char buffer[], char funcName[], float *arg){
     }
     // Get function name from JSON
     cJSON *JSONfunc = cJSON_GetObjectItemCaseSensitive(json, "function");
-    if(!cJSON_IsString(JSONfunc) && JSONfunc->valuestring == NULL){
+    if(NULL == JSONfunc || !cJSON_IsString(JSONfunc) || JSONfunc->valuestring == NULL){
         printJSONParsingError();
         *funcName = '\0';
         cJSON_Delete(json);
@@ -222,13 +222,13 @@ void decodeJSONServerMessage(const char buffer[], char funcName[], float *arg){
 
     // Get argument from JSON
     cJSON *JSONarg = cJSON_GetObjectItemCaseSensitive(json, "argument");
-    if(!cJSON_IsNumber(JSONarg)){
+    if(NULL ==JSONarg){
         printJSONParsingError();
         *funcName = '\0';
         cJSON_Delete(json);
         return;
     }
-
+    
     strcpy(funcName, JSONfunc->valuestring);
     if(cJSON_IsNumber(JSONarg))
         *arg = (float)JSONarg->valuedouble;
