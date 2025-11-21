@@ -73,7 +73,7 @@ def handleClientConnection(server_socket):
     while True:
         try:
             waitClientConnection(server_socket)
-            client_connection.settimeout(15)
+            client_connection.settimeout(5)
 
             client_thread = threading.Thread(
                 target=receiveMeasurementsFromClient,
