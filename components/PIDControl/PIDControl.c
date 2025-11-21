@@ -8,7 +8,7 @@
  */
 #include "PIDControl.h"
 
-void setDesiredValue(PIDController *pidC, float desiredVal){
+void setPIDDesiredValue(PIDController *pidC, float desiredVal){
 	if(NULL == pidC){
 		return;
 	}

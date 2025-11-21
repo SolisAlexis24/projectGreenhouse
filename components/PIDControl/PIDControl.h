@@ -23,7 +23,7 @@ typedef struct{
 	float minOutput;
 }PIDController;
 
-void setDesiredValue(PIDController *pidC, float desiredVal);
+void setPIDDesiredValue(PIDController *pidC, float desiredVal);
 
 void setPIDGains(PIDController *pidC, float Kp, float Ki, float Kd);
 
