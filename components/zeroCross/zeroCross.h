@@ -20,6 +20,8 @@
 #define ZERO_CROSS_PIN 13
 #define DIMMER_PIN 33
 #define ZERO_CROSS_LED 2
+#define MAX_BULB_POWER 1.0
+#define MIN_BUBL_POWER 0.0
 
 /**
  * @brief      Init zero cross detection (pins and timer)
