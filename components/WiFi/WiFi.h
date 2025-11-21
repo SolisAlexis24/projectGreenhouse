@@ -36,30 +36,30 @@
 #define TCP_SUCCESS 1 << 0
 #define TCP_FAILURE 1 << 1
 
-#define SSID "INFINITUMC023_2.4"
-#define PSSWD "Uranioxd235"
-#define SERVER_IP "192.168.1.172"
-#define SERVER_PORT htons(42069)
 
 /**
- * @brief      Initializes the WiFi interface and connects to an AP
+ * @brief      			Initializes the WiFi interface and connects to an AP
+ * @param[in] 	ssid	Access point name
+ * @param[in]	psswd 	Password for access point
  *
  * @return     
  * - WIFI_SUCCESS	If WiFi was successfully initialized and connection with AP was successfull
  * - WIFI_FAILURE 	If connection with AP was not successfull 
  */
-esp_err_t WiFiInit();
+esp_err_t WiFiInit(const char ssid[], const char psswd[]);
 
 /**
  * @brief      Connects to a tcp server using specified socket.
  *
- * @param[in]  Socket to connect with
+ * @param[in]  mySocket 	Socket to connect with
+ * @param[in]  ip 	  		Server IP
+ * @param[in]  port 		Server port
  *
  * @return
  * - TCP_SUCCESS If connection with server was successfull
  * - TCP_FAILURE If connection with server was not successfull
  */
-esp_err_t connectTCPServer(int mySocket);
+esp_err_t connectTCPServer(int mySocket, const char ip[], in_port_t port);
 
 /**
  * @brief      Sends given sensors data to server as a JSON
@@ -74,3 +74,17 @@ esp_err_t connectTCPServer(int mySocket);
  * - TCP_FAILURE If data failed to be sent
  */
 esp_err_t sendSensorsDataToServer(int mySocket, float LM135Temp, float AM2302Hum, float AM2302Temp);
+
+/**
+ * @brief      When an error has ocurred after trying to parse a JSON, prints such error
+ */
+void printJSONParsingError();
+
+/**
+ * @brief      Decodes JSON message from server, extracting function name and argument
+ *
+ * @param[in]  	buffer    Socket input buffer (JSON received)
+ * @param[out]  funcName  Function to execute name
+ * @param[out]  arg       Argument for function
+ */
+void decodeJSONServerMessage(const char buffer[], char funcName[], float *arg);

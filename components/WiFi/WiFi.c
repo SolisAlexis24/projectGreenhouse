@@ -66,23 +66,34 @@ static void _IPHandler(void* arg, esp_event_base_t event_base, int32_t event_id,
 	}
 }
 
-static void _configureConnection(){
-    wifi_config_t wifi_config = {
-        .sta = {
-            .ssid = SSID,
-            .password = PSSWD,
-            .threshold.authmode = WIFI_AUTH_WPA2_PSK,
-             .pmf_cfg = {
-        	.capable = true,
-        	.required = false
-       		},
-        },
-    };
-    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA) );
+/**
+ * @brief      Configure WiFi connection, password can be empty if AP is open
+ *
+ * @param[in]   ssid    Access point name
+ * @param[in]   psswd   Password for access point
+ */
+static void _configureConnection(const char ssid[], const char psswd[]) {
+
+    wifi_config_t wifi_config = { 0 };
+
+    // Copiar SSID
+    strncpy((char*)wifi_config.sta.ssid, ssid, sizeof(wifi_config.sta.ssid) - 1);
+
+    // Copiar password
+    strncpy((char*)wifi_config.sta.password, psswd, sizeof(wifi_config.sta.password) - 1);
+
+    // Si la contraseña está vacía → red abierta
+    wifi_config.sta.threshold.authmode =
+        (psswd[0] == '\0') ? WIFI_AUTH_OPEN : WIFI_AUTH_WPA2_PSK;
+
+    wifi_config.sta.pmf_cfg.capable = true;
+    wifi_config.sta.pmf_cfg.required = false;
+
+    ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
     ESP_ERROR_CHECK(esp_wifi_set_config(WIFI_IF_STA, &wifi_config));
 }
 
-esp_err_t WiFiInit(){
+esp_err_t WiFiInit(const char ssid[], const char psswd[]){
 	esp_err_t errorStatus = WIFI_FAILURE;
 	_initPeripherialsAndDrivers();
 
@@ -101,7 +112,7 @@ esp_err_t WiFiInit(){
                                                     NULL,
                                                     &instance_got_ip));
 
-	_configureConnection();
+	_configureConnection(ssid, psswd);
 
     ESP_ERROR_CHECK(esp_wifi_start());
 
@@ -135,12 +146,12 @@ esp_err_t WiFiInit(){
 }
 
 
-esp_err_t connectTCPServer(int mySocket){
+esp_err_t connectTCPServer(int mySocket, const char ip[], in_port_t port){
 	struct sockaddr_in serverInfo = {0};
 
 	serverInfo.sin_family = AF_INET;
-	inet_pton(AF_INET, SERVER_IP, &serverInfo.sin_addr);
-	serverInfo.sin_port = SERVER_PORT;
+	inet_pton(AF_INET, ip, &serverInfo.sin_addr);
+	serverInfo.sin_port = port;
 
 	if(connect(mySocket, (struct sockaddr *)&serverInfo, sizeof(serverInfo)) != 0){
 		ESP_LOGE(WiFi_TAG, "Failed to connect to %s", inet_ntoa(serverInfo.sin_addr.s_addr));
@@ -182,4 +193,45 @@ esp_err_t sendSensorsDataToServer(int mySocket, float LM135Temp, float AM2302Hum
     cJSON_free(json_str);
    	cJSON_Delete(root);
     return transactionStatus;
+}
+
+void printJSONParsingError(){
+    const char *error_ptr = cJSON_GetErrorPtr();
+    if (error_ptr != NULL) {
+        ESP_LOGE(WiFi_TAG, "Error: %s\n", error_ptr);
+    }
+}
+
+
+void decodeJSONServerMessage(const char buffer[], char funcName[], float *arg){
+    cJSON *json = cJSON_Parse(buffer);
+    if (json == NULL) {
+        printJSONParsingError();
+        funcName = NULL;
+        cJSON_Delete(json);
+        return;
+    }
+    // Get function name from JSON
+    cJSON *JSONfunc = cJSON_GetObjectItemCaseSensitive(json, "function");
+    if(!cJSON_IsString(JSONfunc) && JSONfunc->valuestring == NULL){
+        printJSONParsingError();
+        funcName = NULL;
+        cJSON_Delete(json);
+        return;
+    }
+
+    // Get argument from JSON
+    cJSON *JSONarg = cJSON_GetObjectItemCaseSensitive(json, "argument");
+    if(!cJSON_IsNumber(JSONarg)){
+        printJSONParsingError();
+        funcName = NULL;
+        cJSON_Delete(json);
+        return;
+    }
+
+    strcpy(funcName, JSONfunc->valuestring);
+    if(cJSON_IsNumber(JSONarg))
+        *arg = (float)JSONarg->valuedouble;
+
+    cJSON_Delete(json);
 }
