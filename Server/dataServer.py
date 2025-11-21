@@ -15,7 +15,8 @@ from graphics import (
     storeData,
     resetMeasurements,
     periodicGraphsUpdate,
-    createDataDirectories
+    createDataDirectories,
+    writeToLOG
 )
 
 client_connection = None
@@ -95,17 +96,20 @@ def handleClientConnection(server_socket):
 def setFanPower(power):
     """Configura la potencia del ventilador
     Power se divide pra dejarlo en rango [0, 1]"""
-    sendFunctionToClient("setFanPower", power/100.0)
+    if sendFunctionToClient("setFanPower", power/100.0):
+        writeToLOG(f"Potencia de ventilador modificada al: {power}%")
 
 
 def setDesiredTemperature(temperature):
     """Configura la temperatura deseada del sistema"""
-    sendFunctionToClient("setDesiredTemperature", temperature)
+    if sendFunctionToClient("setDesiredTemperature", temperature):
+        writeToLOG(f"Temperatura deseada modificada a: {temperature}°C")
 
 
 def toggleIrrigation():
     """Envia la funcion para cambiar el estado del iriigador"""
-    sendFunctionToClient("toggleIrrigation", "")
+    if sendFunctionToClient("toggleIrrigation", ""):
+        writeToLOG(f"Se modifica el estado de la bomba de irrigación")
 
 
 def sendFunctionToClient(Function, Argument):
@@ -113,13 +117,14 @@ def sendFunctionToClient(Function, Argument):
     global client_connection, client_address
     if not client_connection:
         print(f"[Servidor de datos]: No hay cliente conectado, no se puede enviar {Function}")
-        return
+        return False
 
     try:
         funcDict = {"function": Function, "argument": Argument}
         funcJSON = json.dumps(funcDict)
         funcEncod = funcJSON.encode()
         client_connection.sendall(funcEncod)
+        return True
 
     except Exception as e:
         print(f"[Servidor de datos]: Error enviando función {Function}: {e}")

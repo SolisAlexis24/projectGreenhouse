@@ -14,10 +14,11 @@ GRAPH_Y_MARGIN = 5
 LM135_GRAPH = "LT"
 AM2302T_GRAPH = "AT"
 AM2302H_GRAPH = "AH"
-MAIN_DIRECTORY = "Status"
-LM135_DATA_DIR = MAIN_DIRECTORY + "/LM135/"
-AM2302T_DATA_DIR = MAIN_DIRECTORY + "/AM2302T/"
-AM2302H_DATA_DIR = MAIN_DIRECTORY + "/AM2302H/"
+MAIN_DIRECTORY_PATH_DIR = "Status"
+LM135_DATA_PATH_DIR = MAIN_DIRECTORY_PATH_DIR + "/LM135/"
+AM2302T_DATA_PATH_DIR = MAIN_DIRECTORY_PATH_DIR + "/AM2302T/"
+AM2302H_DATA_PATH_DIR = MAIN_DIRECTORY_PATH_DIR + "/AM2302H/"
+LOG_FILE_PATH = MAIN_DIRECTORY_PATH_DIR + "/actions.log"
 
 # Datos globales
 LM135Data = []
@@ -31,15 +32,15 @@ def graphMeasurements(data, graph_type):
     if graph_type == LM135_GRAPH:
         mylabel = "Temperatura LM135"
         units = "[°C]"
-        path = LM135_DATA_DIR
+        path = LM135_DATA_PATH_DIR
     elif graph_type == AM2302T_GRAPH:
         mylabel = "Temperatura AM2302"
         units = "[°C]"
-        path = AM2302T_DATA_DIR
+        path = AM2302T_DATA_PATH_DIR
     elif graph_type == AM2302H_GRAPH:
         mylabel = "Humedad"
         units = "[%]"
-        path = AM2302H_DATA_DIR
+        path = AM2302H_DATA_PATH_DIR
     else:
         mylabel = "?"
         units = "?"
@@ -112,26 +113,44 @@ def periodicGraphsUpdate():
 
 
 def createDataDirectories():
-    try:
-        os.mkdir(MAIN_DIRECTORY)
-        print(f"[Servidor de datos]: Directorio '{MAIN_DIRECTORY}' creado.")
-    except FileExistsError:
-        ...
+    if not os.path.exists(MAIN_DIRECTORY_PATH_DIR):
+        try:
+            os.mkdir(MAIN_DIRECTORY_PATH_DIR)
+            print(f"[Servidor de datos]: Directorio '{MAIN_DIRECTORY_PATH_DIR}' creado.")
+        except PermissionError:
+            print("[Servidor de datos]: Error de permisos al intentar crear archivos")
 
-    try:
-        os.mkdir(LM135_DATA_DIR)
-        print(f"[Servidor de datos]: Directorio '{LM135_DATA_DIR}' creado.")
-    except FileExistsError:
-        ...
+    if not os.path.exists(LM135_DATA_PATH_DIR):
+        try:
+            os.mkdir(LM135_DATA_PATH_DIR)
+            print(f"[Servidor de datos]: Directorio '{LM135_DATA_PATH_DIR}' creado.")
+        except PermissionError:
+            print("[Servidor de datos]: Error de permisos al intentar crear archivos")
 
-    try:
-        os.mkdir(AM2302T_DATA_DIR)
-        print(f"[Servidor de datos]: Directorio '{AM2302T_DATA_DIR}' creado.")
-    except FileExistsError:
-        ...
+    if not os.path.exists(AM2302T_DATA_PATH_DIR):
+        try:
+            os.mkdir(AM2302T_DATA_PATH_DIR)
+            print(f"[Servidor de datos]: Directorio '{AM2302T_DATA_PATH_DIR}' creado.")
+        except PermissionError:
+            print("[Servidor de datos]: Error de permisos al intentar crear archivos")
 
-    try:
-        os.mkdir(AM2302H_DATA_DIR)
-        print(f"[Servidor de datos]: Directorio '{AM2302H_DATA_DIR}' creado.")
-    except FileExistsError:
-        ...
+    if not os.path.exists(AM2302H_DATA_PATH_DIR):
+        try:
+            os.mkdir(AM2302H_DATA_PATH_DIR)
+            print(f"[Servidor de datos]: Directorio '{AM2302H_DATA_PATH_DIR}' creado.")
+        except PermissionError:
+            print("[Servidor de datos]: Error de permisos al intentar crear archivos")
+
+    if not os.path.exists(LOG_FILE_PATH):
+        try:
+            with open(LOG_FILE_PATH, "w") as f:
+                pass
+        except PermissionError:
+            print("[Servidor de datos]: Error de permisos al intentar crear archivos")
+
+
+def writeToLOG(LOGentry):
+    serverTime = datetime.fromtimestamp(time.time()).astimezone()
+    with open(LOG_FILE_PATH, "a") as f:
+        f.write(LOGentry)
+        f.write(f' @ {serverTime.day}-{serverTime.month}-{serverTime.year} {serverTime.hour}:{serverTime.minute}\n')
