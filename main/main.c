@@ -20,6 +20,7 @@
 #include "WiFi.h"
 #include "PWM.h"
 #include "zeroCross.h"
+#include "PIDControl.h"
 #include <stdbool.h>
 #include <stdint.h>
 #include <fcntl.h>
@@ -36,6 +37,11 @@
 #define PRIORITY_0                  0
 #define PRIORITY_1                  1
 #define PRIORITY_2                  2
+
+#define SSID CONFIG_SSID
+#define PSSWD CONFIG_PSSWD
+#define SERVER_IP CONFIG_SERVER_IP
+#define SERVER_PORT CONFIG_SERVER_PORT
 
 static const char *TAG = "Main app";
 
@@ -71,44 +77,57 @@ void readAM2302(void *pvParameters);
 void readLM135(void *pvParameters);
 
 /**
- * @brief      Sends a data to server approximately every 2 seconds
+ * @brief      Task that sends sensors data to server
  *
  */
 void sendDataToServer(void *pvParameters);
 
 /**
- * @brief      Receive instructions from server every second
+ * @brief      Task for receiving functions to execute from server
  *
  */
-void receiveInstructionsFromServer(void *pvParameters);
+void receiveFunctionExecutionFromServer(void *pvParameters);
 
 
-void decodeServerMessage(char buffer[]);
+/**
+ * @brief      Executes function with funcName with argument arg
+ *
+ * @param[in]  funcName  Function name
+ * @param[in]  arg       Argument
+ * @warning Only works for certain functions
+ */
+void executeFunction(const char funcName[], const float arg);
 
+/**
+ * @brief      Task for execute PID control
+ *
+ */
+void PIDControl(void *pvParameters);
 
 /**
  * Global variables
  */
-int mySocket;
-LCD1602 lcd;
+int TCPSocket;
+LCD1602 informationLCD;
 AM2302Handler am2302;
 ADCHandler ADC_U1;
 LM135Handler lm135;
 FanHandler coolerFan;
+PIDController BulbPowerPIDController;
 
 
-void app_main(void){    
+void app_main(void){  
+     
     i2c_master_bus_handle_t bus_handle;
     i2c_master_init(&bus_handle);
-    esp_err_t LCDStatus = LCDinit(&lcd, LCD_I2C_ADDR, I2C_MASTER_FREQ_HZ, &bus_handle);
+    esp_err_t LCDStatus = LCDinit(&informationLCD, LCD_I2C_ADDR, I2C_MASTER_FREQ_HZ, &bus_handle);
     if(ESP_OK == LCDStatus){
         ESP_LOGI(TAG, "LCD initialized successfully");
-        LCDsetBackgroundLight(&lcd, BackgroundLightON);
-        //LCDclear(&lcd);
-        printStaticCharsLCD(&lcd);
+        LCDsetBackgroundLight(&informationLCD, BackgroundLightON);
+        printStaticCharsLCD(&informationLCD);
         xTaskCreate(updateLCDContent, "LCD", 4096, NULL, PRIORITY_0, NULL);   
     }
-
+    
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
@@ -116,31 +135,30 @@ void app_main(void){
     }
     ESP_ERROR_CHECK(ret);
 
-    esp_err_t WiFiStatus = WiFiInit();
+    esp_err_t WiFiStatus = WiFiInit(SSID, PSSWD);
     if(WIFI_SUCCESS != WiFiStatus){
         ESP_LOGE(TAG, "Failed to associate to AP, dying ...");
         return;
     }
-    mySocket = socket(AF_INET, SOCK_STREAM, 0);
-    if(mySocket < 0){
+    TCPSocket = socket(AF_INET, SOCK_STREAM, 0);
+    if(TCPSocket < 0){
         ESP_LOGE(TAG, "Failed to create socket");
         return;
     } 
-    if(TCP_FAILURE == connectTCPServer(mySocket)){
-        close(mySocket);
+    if(TCP_FAILURE == connectTCPServer(TCPSocket, SERVER_IP, htons(SERVER_PORT))){
+        close(TCPSocket);
         return;
     }
-    int flags = fcntl(mySocket, F_GETFL, 0);
-    fcntl(mySocket, F_SETFL, flags | O_NONBLOCK);
+    int flags = fcntl(TCPSocket, F_GETFL, 0);
+    fcntl(TCPSocket, F_SETFL, flags | O_NONBLOCK);
     xTaskCreate(sendDataToServer, "TCP Connection", 6144, NULL, PRIORITY_2, NULL);
-    xTaskCreate(receiveInstructionsFromServer, "Instructions", 6144, NULL, PRIORITY_2, NULL);
+    xTaskCreate(receiveFunctionExecutionFromServer, "Instructions", 6144, NULL, PRIORITY_2, NULL);
     
     esp_err_t AM2302status = AM2302init(&am2302, GPIO_NUM_23);
     if(ESP_OK == AM2302status){
         ESP_LOGI(TAG, "AM2302 initialized successfully");
         xTaskCreate(readAM2302, "A2302", 4096, NULL, PRIORITY_1, NULL);
     }
-
 
     esp_err_t ADC1Status = ADCconfigUnitBasic(&ADC_U1, ADC_UNIT_1);
     ADC1Status += ADCconfigChannel(&ADC_U1, ADC_ATTEN_DB_12, ADC_BITWIDTH_12, ADC_CHANNEL_4);
@@ -153,6 +171,12 @@ void app_main(void){
         ESP_LOGE(TAG, "Cannot initialize cooler fan PWM");
     }
     
+    setPIDDesiredValue(&BulbPowerPIDController, 27.0);
+    setPIDGains(&BulbPowerPIDController, 0.5, 0, 0);
+    setPIDMaxAndMinVals(&BulbPowerPIDController, MIN_BUBL_POWER, MAX_BULB_POWER);
+    esp_err_t ZXStatus = zeroCrossInit();
+    if(ESP_OK ==  ZXStatus)
+        xTaskCreate(PIDControl, "PID control", 3072, NULL, PRIORITY_1, NULL);
 
 }
 
@@ -160,8 +184,6 @@ void app_main(void){
 void readAM2302(void *pvParameters){
     while (true) {
         AM2302read(&am2302);
-        //ESP_LOGI(TAG, "Temperatura AM2302: %.2f", am2302.temperature);
-        //ESP_LOGI(TAG, "Humedad AM2302: %.2f", am2302.humidity);
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
@@ -169,7 +191,6 @@ void readAM2302(void *pvParameters){
 void readLM135(void *pvParameters){
     while (true) {
         LM135read(&lm135);
-        //ESP_LOGI(TAG, "Temperatura LM135: %.2f", lm135.temperature);
         vTaskDelay(pdMS_TO_TICKS(2000));
     }
 }
@@ -178,10 +199,10 @@ void readLM135(void *pvParameters){
 void sendDataToServer(void *pvParameters){
     esp_err_t Tst;
     while(true){
-        Tst = sendSensorsDataToServer(mySocket, lm135.temperature, am2302.humidity, am2302.temperature);
+        Tst = sendSensorsDataToServer(TCPSocket, lm135.temperature, am2302.humidity, am2302.temperature);
         if(Tst == TCP_FAILURE){
             ESP_LOGE(TAG, "Connection with server lost");
-            close(mySocket);
+            close(TCPSocket);
             break;
         }
         vTaskDelay(pdMS_TO_TICKS(2000));
@@ -189,19 +210,22 @@ void sendDataToServer(void *pvParameters){
     vTaskDelete(NULL);
 }
 
-void receiveInstructionsFromServer(void *pvParameters){
+void receiveFunctionExecutionFromServer(void *pvParameters){
     char rxBuffer[128];
     ssize_t len;
+    char funcName[64];
+    float arg;
     while (true){
-        len = recv(mySocket, rxBuffer, sizeof(rxBuffer) - 1, MSG_DONTWAIT);
+        len = recv(TCPSocket, rxBuffer, sizeof(rxBuffer) - 1, MSG_DONTWAIT);
         if( len == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)){
-            // Sin datos recibidos por el servidor
+            // No data received from server
             vTaskDelay(pdMS_TO_TICKS(100)); 
         }
         else if (len > 0) {
-            // Recibio datos de servidor
+            // Data received
             rxBuffer[len] = '\0';
-            decodeServerMessage(rxBuffer);
+            decodeJSONServerMessage(rxBuffer, funcName, &arg);
+            executeFunction(funcName, arg);
         }
         else if (len == 0) {
             ESP_LOGE(TAG, "Connection closed by peer");
@@ -211,62 +235,44 @@ void receiveInstructionsFromServer(void *pvParameters){
     vTaskDelete(NULL);
 }
 
-// TODO: Pasar esto al paquete de WiFi
-void decodeServerMessage(char buffer[]){
-    cJSON *json = cJSON_Parse(buffer);
-    if (json == NULL) {
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            ESP_LOGE(TAG, "Error: %s\n", error_ptr);
-        }
-        cJSON_Delete(json);
+void executeFunction(const char funcName[], const float arg){
+    if(NULL == funcName){
+        ESP_LOGE(TAG, "No se obtuvo nombre de funcion");
         return;
     }
-    // TODO: Pasar esto a una funcion
-    cJSON *func = cJSON_GetObjectItemCaseSensitive(json, "function");
-    if(!cJSON_IsString(func) && func->valuestring == NULL){
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            ESP_LOGE(TAG, "Error: %s\n", error_ptr);
-        }
-        cJSON_Delete(json);
-        return;
-    }
-    // Funcion toggle no requiere argumentos
-    if(0 == strcmp(func->valuestring, "toggleIrrigation")){
+    if(0 == strcmp(funcName, "toggleIrrigation")){
         // TODO: Poner aqui lo de toggle el sistema de irrigacion
-        ESP_LOGI(TAG, "Modificacion de irrigacion");
-        cJSON_Delete(json);
-        return;
+        ESP_LOGI(TAG, "Toggle de sistema de irrigacion");
     }
+    else if(0 == strcmp(funcName, "setDesiredTemperature")){
+        setPIDDesiredValue(&BulbPowerPIDController, arg);
+        ESP_LOGI(TAG, "Temperatura ajustada: %.3f", arg);
+    }
+    else if(0 == strcmp(funcName, "setFanPower")){
+        setFanDutyCyclePerc(&coolerFan, arg);
+        ESP_LOGI(TAG, "Modificacion de potencia de ventilador: %f", arg);
+    }
+    else{
+        ESP_LOGE(TAG, "Funcion no reconocida");
+    }
+}
 
-    cJSON *arg = cJSON_GetObjectItemCaseSensitive(json, "argument");
-    if(!cJSON_IsNumber(arg)){
-        const char *error_ptr = cJSON_GetErrorPtr();
-        if (error_ptr != NULL) {
-            ESP_LOGE(TAG, "Error: %s\n", error_ptr);
-        }
-        cJSON_Delete(json);
-        return;
+void PIDControl(void *pvParameters){
+    float power;
+    while (true) {
+        power = computePIDOutput(&BulbPowerPIDController, am2302.temperature);
+        setBulbPowerPerc(power);
+        vTaskDelay(pdMS_TO_TICKS(250));
     }
-    if(0 == strcmp(func->valuestring, "setDesiredTemperature")){
-        //TODO: Poner aqui lo de modificar temperatura
-        ESP_LOGI(TAG, "Temperatura deseada: %d", arg->valueint);
-    }
-    else if(0 == strcmp(func->valuestring, "setFanPower")){
-        setFanDutyCyclePerc(&coolerFan, (float)arg->valuedouble);
-        ESP_LOGI(TAG, "Modificacion de potencia de ventilador a %f", (float)arg->valuedouble);
-    }
-    cJSON_Delete(json);
 }
 
 
 void updateLCDContent(void *pvParameters){
     while (true) {
-        LCDsetCursor(&lcd, 9, 0);
-        LCDprint(&lcd, "%02.1f", am2302.temperature);
-        LCDsetCursor(&lcd, 9, 1);
-        LCDprint(&lcd,"%02.1f",  am2302.humidity);
+        LCDsetCursor(&informationLCD, 9, 0);
+        LCDprint(&informationLCD, "%02.1f", am2302.temperature);
+        LCDsetCursor(&informationLCD, 9, 1);
+        LCDprint(&informationLCD,"%02.1f",  am2302.humidity);
         vTaskDelay(pdMS_TO_TICKS(5000));
     }
 }

@@ -9,7 +9,8 @@ set(COMPONENT_PRIV_REQUIRES
             ADC
             WiFi
             PWM
-            zeroCross)
+            zeroCross
+            PIDControl)
 
 idf_component_register(SRCS "main.c"
                     INCLUDE_DIRS "."
