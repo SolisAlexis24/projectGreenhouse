@@ -11,11 +11,17 @@ import os
 import sys
 import json
 import magic
+import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from dataServer import setFanPower, setDesiredTemperature, toggleIrrigation
 
-# Configuración del servidor
-address = "192.168.1.172"
+# Obtener IP del host (Linux)
+address = subprocess.run(
+        ["hostname", "-I"],
+        capture_output=True,
+        text=True
+    )
+address = address.stdout.strip().split()[0]
 port = 8080
 
 # Carpeta base (sandbox)
