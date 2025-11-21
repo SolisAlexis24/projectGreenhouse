@@ -8,14 +8,8 @@
  */
 
 #include "zeroCross.h"
-#include "esp_err.h"
-#include <stdint.h>
 
 static const char *zx_TAG = "ZeroX";
-
-#define ZERO_CROSS_PIN 13
-#define DIMMER_PIN 33
-#define ZERO_CROSS_LED 2
 
 static gptimer_alarm_config_t internalAlarmConf = {
         .alarm_count = 8000,

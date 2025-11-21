@@ -17,6 +17,10 @@
 #include "driver/gptimer.h"
 
 
+#define ZERO_CROSS_PIN 13
+#define DIMMER_PIN 33
+#define ZERO_CROSS_LED 2
+
 /**
  * @brief      Init zero cross detection (pins and timer)
  *
