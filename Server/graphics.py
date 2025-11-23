@@ -101,6 +101,7 @@ def resetMeasurements():
 def periodicGraphsUpdate():
     """Hilo encargado de generar las gráficas de forma periódica."""
     global LM135Data, AM2302TData, AM2302HData, timeData
+    resetMeasurements()
     start = time.time()
     while True:
         if time.time() - start >= GRAPH_PERIOD_S:

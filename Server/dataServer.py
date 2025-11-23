@@ -36,9 +36,6 @@ def receiveMeasurementsFromClient():
         print("[Servidor de datos]: No hay cliente, imposible recabar datos")
         return
 
-    threading.Thread(target=periodicGraphsUpdate, daemon=True).start()
-    resetMeasurements()
-
     while True:
         try:
             data = client_connection.recv(1024)
@@ -63,6 +60,7 @@ def receiveMeasurementsFromClient():
 
     try:
         client_connection.close()
+        resetMeasurements()
         print(f"[Servidor de datos]: Conexión cerrada con {client_address}")
     except:
         pass
@@ -74,7 +72,7 @@ def handleClientConnection(server_socket):
     while True:
         try:
             waitClientConnection(server_socket)
-            client_connection.settimeout(5)
+            client_connection.settimeout(10)
 
             client_thread = threading.Thread(
                 target=receiveMeasurementsFromClient,
