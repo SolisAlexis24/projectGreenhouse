@@ -21,10 +21,10 @@ else
 	echo "=== Instalando Libopenblas ==="
 	sudo apt install -y libopenblas-dev
 
-	echo "=== Instalando matplotlib"
+	echo "=== Instalando matplotlib ==="
 	pip install matplotlib
 
-	echo "=== Instalando python magic"
+	echo "=== Instalando python magic ==="
 	sudo apt install python3-magic
 fi
 
