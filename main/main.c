@@ -1,6 +1,7 @@
 #include "cJSON.h"
 #include "esp_adc/adc_cali.h"
 #include "esp_err.h"
+#include "esp_rom_sys.h"
 #include "hal/adc_types.h"
 #include "hal/ledc_types.h"
 #include "lwip/sockets.h"
@@ -42,6 +43,8 @@
 #define PSSWD CONFIG_PSSWD
 #define SERVER_IP CONFIG_SERVER_IP
 #define SERVER_PORT CONFIG_SERVER_PORT
+
+#define IRRIGATION_PIN 17
 
 static const char *TAG = "Main app";
 
@@ -114,20 +117,10 @@ ADCHandler ADC_U1;
 LM135Handler lm135;
 FanHandler coolerFan;
 PIDController BulbPowerPIDController;
+bool irrigationLevel = false;
 
 
-void app_main(void){  
-     
-    i2c_master_bus_handle_t bus_handle;
-    i2c_master_init(&bus_handle);
-    esp_err_t LCDStatus = LCDinit(&informationLCD, LCD_I2C_ADDR, I2C_MASTER_FREQ_HZ, &bus_handle);
-    if(ESP_OK == LCDStatus){
-        ESP_LOGI(TAG, "LCD initialized successfully");
-        LCDsetBackgroundLight(&informationLCD, BackgroundLightON);
-        printStaticCharsLCD(&informationLCD);
-        xTaskCreate(updateLCDContent, "LCD", 4096, NULL, PRIORITY_0, NULL);   
-    }
-    
+void app_main(void){      
     esp_err_t ret = nvs_flash_init();
     if (ret == ESP_ERR_NVS_NO_FREE_PAGES || ret == ESP_ERR_NVS_NEW_VERSION_FOUND) {
       ESP_ERROR_CHECK(nvs_flash_erase());
@@ -171,13 +164,31 @@ void app_main(void){
         ESP_LOGE(TAG, "Cannot initialize cooler fan PWM");
     }
     
-    setPIDDesiredValue(&BulbPowerPIDController, 27.0);
-    setPIDGains(&BulbPowerPIDController, 0.5, 0, 0);
+    setPIDDesiredValue(&BulbPowerPIDController, 0.0);
+    setPIDGains(&BulbPowerPIDController, 0.5, 0.0005, 0.25);
     setPIDMaxAndMinVals(&BulbPowerPIDController, MIN_BUBL_POWER, MAX_BULB_POWER);
     esp_err_t ZXStatus = zeroCrossInit();
     if(ESP_OK ==  ZXStatus)
         xTaskCreate(PIDControl, "PID control", 3072, NULL, PRIORITY_1, NULL);
 
+    esp_err_t irrigationStatus = gpio_reset_pin(IRRIGATION_PIN);
+    if(irrigationStatus){
+        ESP_LOGE(TAG, "Invalid GPIO pin for irrigation");
+    }
+    else{
+        gpio_set_direction(IRRIGATION_PIN, GPIO_MODE_OUTPUT);
+        gpio_set_level(IRRIGATION_PIN, irrigationLevel);
+    }
+
+    i2c_master_bus_handle_t bus_handle;
+    i2c_master_init(&bus_handle);
+    esp_err_t LCDStatus = LCDinit(&informationLCD, LCD_I2C_ADDR, I2C_MASTER_FREQ_HZ, &bus_handle);
+    if(ESP_OK == LCDStatus){
+        ESP_LOGI(TAG, "LCD initialized successfully");
+        LCDsetBackgroundLight(&informationLCD, BackgroundLightON);
+        printStaticCharsLCD(&informationLCD);
+        xTaskCreate(updateLCDContent, "LCD", 4096, NULL, PRIORITY_0, NULL);   
+    }
 }
 
 
@@ -219,7 +230,7 @@ void receiveFunctionExecutionFromServer(void *pvParameters){
         len = recv(TCPSocket, rxBuffer, sizeof(rxBuffer) - 1, MSG_DONTWAIT);
         if( len == -1 && (errno == EAGAIN || errno == EWOULDBLOCK)){
             // No data received from server
-            vTaskDelay(pdMS_TO_TICKS(100)); 
+            vTaskDelay(pdMS_TO_TICKS(500)); 
         }
         else if (len > 0) {
             // Data received
@@ -241,7 +252,8 @@ void executeFunction(const char funcName[], const float arg){
         return;
     }
     if(0 == strcmp(funcName, "toggleIrrigation")){
-        // TODO: Poner aqui lo de toggle el sistema de irrigacion
+        irrigationLevel = !irrigationLevel;
+        gpio_set_level(IRRIGATION_PIN, irrigationLevel);
         ESP_LOGI(TAG, "Toggle de sistema de irrigacion");
     }
     else if(0 == strcmp(funcName, "setDesiredTemperature")){
@@ -253,7 +265,7 @@ void executeFunction(const char funcName[], const float arg){
         ESP_LOGI(TAG, "Modificacion de potencia de ventilador: %f", arg);
     }
     else{
-        ESP_LOGE(TAG, "Funcion no reconocida");
+        ESP_LOGE(TAG, "Funcion no reconocida: %s", funcName);
     }
 }
 
@@ -273,7 +285,7 @@ void updateLCDContent(void *pvParameters){
         LCDprint(&informationLCD, "%02.1f", am2302.temperature);
         LCDsetCursor(&informationLCD, 9, 1);
         LCDprint(&informationLCD,"%02.1f",  am2302.humidity);
-        vTaskDelay(pdMS_TO_TICKS(5000));
+        vTaskDelay(pdMS_TO_TICKS(3000));
     }
 }
 
