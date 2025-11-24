@@ -17,7 +17,7 @@
 #include "driver/gptimer.h"
 
 
-#define ZERO_CROSS_PIN 13
+#define ZERO_CROSS_PIN 4
 #define DIMMER_PIN 33
 #define ZERO_CROSS_LED 2
 #define MAX_BULB_POWER 1.0
