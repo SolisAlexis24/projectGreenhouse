@@ -11,6 +11,7 @@ import socket
 import json
 import threading
 import time
+from datetime import datetime, timezone
 from graphics import (
     storeData,
     resetMeasurements,
@@ -21,6 +22,7 @@ from graphics import (
 
 client_connection = None
 client_address = None
+IRRIGATION_TIME_S = 20
 
 
 def waitClientConnection(server_socket):
@@ -35,6 +37,9 @@ def receiveMeasurementsFromClient():
     if not client_connection or not client_address:
         print("[Servidor de datos]: No hay cliente, imposible recabar datos")
         return
+
+    threading.Thread(target=periodicGraphsUpdate, daemon=True).start()
+    resetMeasurements()
 
     while True:
         try:
@@ -108,6 +113,32 @@ def toggleIrrigation():
     """Envia la funcion para cambiar el estado del iriigador"""
     if sendFunctionToClient("toggleIrrigation", ""):
         writeToLOG(f"Se modifica el estado de la bomba de irrigación")
+
+
+def addNewIrrigationAlarm(alarmHour, alarmMinute):
+    global client_connection, client_address
+    if not client_connection:
+        print("No hay cliente, imposible agregar una alarma")
+        return
+
+    threading.Thread(target=alarmThread,
+                     daemon=True,
+                     args=(alarmHour, alarmMinute)).start()
+    writeToLOG(f"Se ha programado una alarma para las {alarmHour}:{alarmMinute}")
+
+
+def alarmThread(alarmHour, alarmMinute):
+    while True:
+        currentTime = datetime.fromtimestamp(time.time()).astimezone()
+        if currentTime.hour == alarmHour and currentTime.minute == alarmMinute:
+            writeToLOG(f"Se ha lanzado la alarma de las {alarmHour}:{alarmHour}")
+            toggleIrrigation()
+            startTime = time.time()
+            while time.time() < startTime + IRRIGATION_TIME_S:
+                time.sleep(1)
+            toggleIrrigation()
+            break
+        time.sleep(1)
 
 
 def sendFunctionToClient(Function, Argument):

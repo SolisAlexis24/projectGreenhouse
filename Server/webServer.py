@@ -13,7 +13,7 @@ import json
 import magic
 import subprocess
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from dataServer import setFanPower, setDesiredTemperature, toggleIrrigation
+from dataServer import setFanPower, setDesiredTemperature, toggleIrrigation, addNewIrrigationAlarm
 
 # Obtener IP del host (Linux)
 address = subprocess.run(
@@ -74,7 +74,8 @@ class WebServer(BaseHTTPRequestHandler):
         switcher = {
             'update_fan': setFanPower,
             'toggle_irrigation': toggleIrrigation,
-            'update_temperature': setDesiredTemperature
+            'update_temperature': setDesiredTemperature,
+            'add_irrigation_alarm': addNewIrrigationAlarm
         }
 
         func = switcher.get(json_obj['action'], None)
@@ -98,6 +99,13 @@ class WebServer(BaseHTTPRequestHandler):
                 temp = float(json_obj.get('targetTemp', 25))
                 print(f"\tCall {func}(temp={temp})")
                 func(temp)
+
+            # --- Añadir alarma de irrigación ---
+            elif action == 'add_irrigation_alarm':
+                hour = float(json_obj.get('hour', 0))
+                minute = float(json_obj.get('minute', 0))
+                print(f"\tCall {func}(hour={hour},minute={minute})")
+                func(hour, minute)
 
     # -------------------- GET --------------------
     def do_GET(self):
