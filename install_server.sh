@@ -2,32 +2,35 @@
 
 VENV_DIR="Server/venv"
 REQ_FILE="Server/requirements.txt"
-PYTHON_BIN="python3.11"
 
-echo "=== Actualizando paquetes ==="
+echo "=== Actualizando sistema ==="
 sudo apt update
 
-echo "=== Instalando $PYTHON_BIN ==="
-sudo apt install -y python3.11 python3.11-venv
+echo "=== Instalando pip ==="
+sudo apt install -y python3-pip
 
-echo "=== Verificando instalación==="
-if ! command -v $PYTHON_BIN &> /dev/null
-then
-    echo "Error: python3.11 no está instalado."
-    exit 1
+if [ "$1" == "--virtual" ]; then
+	echo "=== Creando entorno virtual ==="
+    sudo apt install -y python3-venv
+    python3 -m venv "$VENV_DIR"
+    echo "=== Activando entorno virtual ==="
+    source "$VENV_DIR/bin/activate"
+    echo "=== Instalando dependencias de $REQ_FILE ==="
+	pip install -r "$REQ_FILE"
+else
+	echo "=== Instalando Libopenblas ==="
+	sudo apt install -y libopenblas-dev
+
+	echo "=== Instalando matplotlib"
+	pip install matplotlib
+
+	echo "=== Instalando python magic"
+	sudo apt install python3-magic
 fi
 
-echo "=== Creando entorno virtual ==="
-$PYTHON_BIN -m venv "$VENV_DIR"
+chmod +x "Server/mainServer.py"
+echo "=== Listo para ejecutar servidor ==="
 
-echo "=== Activando entorno virtual ==="
-source "$VENV_DIR/bin/activate"
 
-echo "=== Actualizando pip e instalando dependencias ==="
-pip install --upgrade pip
-pip install -r "$REQ_FILE"
 
-echo
-echo "=== Entorno virtual creado ==="
-echo "Para activarlo manualmente luego:"
-echo "  source $VENV_DIR/bin/activate"
+
