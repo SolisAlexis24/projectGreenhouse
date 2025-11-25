@@ -165,7 +165,7 @@ void app_main(void){
     }
     
     setPIDDesiredValue(&BulbPowerPIDController, 0.0);
-    setPIDGains(&BulbPowerPIDController, 0.5, 0.0005, 0.25);
+    setPIDGains(&BulbPowerPIDController, 0.8, 0.005, 0.001);
     setPIDMaxAndMinVals(&BulbPowerPIDController, MIN_BUBL_POWER, MAX_BULB_POWER);
     esp_err_t ZXStatus = zeroCrossInit();
     if(ESP_OK ==  ZXStatus)
