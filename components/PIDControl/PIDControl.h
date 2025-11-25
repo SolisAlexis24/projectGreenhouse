@@ -8,6 +8,8 @@
  */
 #pragma once
 #include <unistd.h>
+#include "freertos/idf_additions.h"
+
 
 
 typedef struct{
@@ -18,6 +20,7 @@ typedef struct{
 	float desiredVal;
 	float IntegralVal;
 	float prevError;
+	float lastTime;
 
 	float maxOutput;
 	float minOutput;
