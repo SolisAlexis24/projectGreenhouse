@@ -9,3 +9,4 @@ Esto es ampliamente cubierto en los tutoriales oficiales, y es altamente recomen
 https://docs.espressif.com/projects/esp-idf/en/stable/esp32/get-started/index.html
 
 # Enlace al video de youtube del proyecto
+https://youtu.be/2BFYWVKo6Fg
